@@ -1,0 +1,25 @@
+body{
+
+    background:#f4f6f9;
+
+}
+
+.navbar{
+
+    box-shadow:0px 2px 10px rgba(0,0,0,.15);
+
+}
+
+.card{
+
+    border:none;
+
+    border-radius:12px;
+
+}
+
+.card-body{
+
+    text-align:center;
+
+}
