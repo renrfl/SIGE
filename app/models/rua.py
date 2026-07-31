@@ -7,19 +7,34 @@ class Rua(db.Model):
 
     __tablename__ = "rua"
 
-    id = db.Column(db.Integer, primary_key=True)
-
-    nome = db.Column(db.String(50), nullable=False)
-
-    empresa_id = db.Column(
+    id = db.Column(
         db.Integer,
-        db.ForeignKey("empresa.id"),
-        nullable=False
+        primary_key=True
     )
 
-    ativo = db.Column(db.Boolean, default=True)
+    nome = db.Column(
+        db.String(50),
+        nullable=False,
+        unique=True
+    )
+
+    descricao = db.Column(
+        db.String(200)
+    )
+
+    ativo = db.Column(
+        db.Boolean,
+        default=True
+    )
 
     data_cadastro = db.Column(
         db.DateTime,
         default=datetime.utcnow
+    )
+
+    predios = db.relationship(
+        "Predio",
+        backref="rua",
+        lazy=True,
+        cascade="all, delete-orphan"
     )
