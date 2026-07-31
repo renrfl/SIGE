@@ -19,8 +19,10 @@ def create_app():
 
     from app.routes.home import home_bp
     from app.routes.estrutura import estrutura_bp
+    from app.routes.rua import rua_bp
 
     app.register_blueprint(home_bp)
     app.register_blueprint(estrutura_bp)
+    app.register_blueprint(rua_bp)
 
     return app

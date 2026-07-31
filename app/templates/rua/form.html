@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}
+
+{% if rua %}
+Editar Rua
+{% else %}
+Nova Rua
+{% endif %}
+
+{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">
+
+{% if rua %}
+Editar Rua
+{% else %}
+Nova Rua
+{% endif %}
+
+</h2>
+
+<form method="POST">
+
+    <div class="mb-3">
+
+        <label class="form-label">
+
+            Nome
+
+        </label>
+
+        <input
+            type="text"
+            name="nome"
+            class="form-control"
+            value="{{ rua.nome if rua else '' }}"
+            required>
+
+    </div>
+
+    <div class="mb-3">
+
+        <label class="form-label">
+
+            Descrição
+
+        </label>
+
+        <textarea
+            name="descricao"
+            class="form-control"
+            rows="3">{{ rua.descricao if rua else '' }}</textarea>
+
+    </div>
+
+    <button class="btn btn-success">
+
+        Salvar
+
+    </button>
+
+    <a href="{{ url_for('rua.listar') }}"
+       class="btn btn-secondary">
+
+        Cancelar
+
+    </a>
+
+</form>
+
+{% endblock %}
