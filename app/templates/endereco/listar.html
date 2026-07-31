@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Endereçamentos{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+    <h2>Endereçamento de Produtos</h2>
+
+    <a
+        href="{{ url_for('endereco.novo') }}"
+        class="btn btn-success">
+
+        Novo Endereçamento
+
+    </a>
+
+</div>
+
+<div class="table-responsive">
+
+    <table class="table table-bordered table-hover align-middle">
+
+        <thead class="table-dark">
+
+            <tr>
+
+                <th>ID</th>
+                <th>Código</th>
+                <th>Produto</th>
+                <th>Código de barras</th>
+                <th>Rua</th>
+                <th>Prédio</th>
+                <th>Módulo</th>
+                <th>Nível</th>
+                <th>Posição</th>
+                <th>Ações</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for endereco in enderecos %}
+
+                <tr>
+
+                    <td>{{ endereco.id }}</td>
+
+                    <td>{{ endereco.produto.codigo }}</td>
+
+                    <td>{{ endereco.produto.descricao }}</td>
+
+                    <td>{{ endereco.produto.codigo_barras }}</td>
+
+                    <td>
+                        {{ endereco.posicao.nivel.modulo.predio.rua.nome }}
+                    </td>
+
+                    <td>
+                        {{ endereco.posicao.nivel.modulo.predio.nome }}
+                    </td>
+
+                    <td>
+                        {{ endereco.posicao.nivel.modulo.nome }}
+                    </td>
+
+                    <td>
+                        {{ endereco.posicao.nivel.nome }}
+                    </td>
+
+                    <td>
+                        {{ endereco.posicao.nome }}
+                    </td>
+
+                    <td>
+
+                        <a
+                            href="{{ url_for('endereco.editar', id=endereco.id) }}"
+                            class="btn btn-warning btn-sm">
+
+                            Editar
+
+                        </a>
+
+                        <a
+                            href="{{ url_for('endereco.excluir', id=endereco.id) }}"
+                            class="btn btn-danger btn-sm"
+                            onclick="return confirm('Deseja remover este endereçamento?')">
+
+                            Excluir
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+            {% else %}
+
+                <tr>
+
+                    <td
+                        colspan="10"
+                        class="text-center">
+
+                        Nenhum produto endereçado.
+
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}
+
+{% if endereco %}
+Editar Endereçamento
+{% else %}
+Novo Endereçamento
+{% endif %}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    {% if endereco %}
+        <h2>Editar Endereçamento</h2>
+    {% else %}
+        <h2>Novo Endereçamento</h2>
+    {% endif %}
+
+    <form method="POST">
+
+        <div class="mb-3">
+
+            <label class="form-label">
+
+                Produto
+
+            </label>
+
+            <select
+                name="produto_id"
+                class="form-select"
+                required>
+
+                <option value="">
+                    Selecione um produto
+                </option>
+
+                {% for produto in produtos %}
+
+                    <option
+                        value="{{ produto.id }}"
+                        {% if endereco and endereco.produto_id == produto.id %}
+                            selected
+                        {% endif %}>
+
+                        {{ produto.codigo }}
+                        -
+                        {{ produto.descricao }}
+
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+        <div class="mb-3">
+
+            <label class="form-label">
+
+                Posição
+
+            </label>
+
+            <select
+                name="posicao_id"
+                class="form-select"
+                required>
+
+                <option value="">
+                    Selecione uma posição
+                </option>
+
+                {% for posicao in posicoes %}
+
+                    <option
+                        value="{{ posicao.id }}"
+                        {% if endereco and endereco.posicao_id == posicao.id %}
+                            selected
+                        {% endif %}>
+
+                        {{ posicao.nivel.modulo.predio.rua.nome }}
+                        →
+                        {{ posicao.nivel.modulo.predio.nome }}
+                        →
+                        {{ posicao.nivel.modulo.nome }}
+                        →
+                        {{ posicao.nivel.nome }}
+                        →
+                        {{ posicao.nome }}
+
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+        <button
+            type="submit"
+            class="btn btn-success">
+
+            Salvar
+
+        </button>
+
+        <a
+            href="{{ url_for('endereco.listar') }}"
+            class="btn btn-secondary">
+
+            Cancelar
+
+        </a>
+
+    </form>
+
+</div>
+
+{% endblock %}

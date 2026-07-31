@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Módulos{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <h2>Cadastro de Módulos</h2>
+
+        <a href="{{ url_for('modulo.novo') }}" class="btn btn-success">
+            Novo Módulo
+        </a>
+
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for categoria, mensagem in messages %}
+                <div class="alert alert-{{ categoria }}">
+                    {{ mensagem }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <table class="table table-bordered table-hover align-middle">
+
+        <thead class="table-dark">
+
+            <tr>
+                <th width="80">ID</th>
+                <th>Módulo</th>
+                <th>Prédio</th>
+                <th>Rua</th>
+                <th width="180">Ações</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        {% for modulo in modulos %}
+
+            <tr>
+
+                <td>{{ modulo.id }}</td>
+
+                <td>{{ modulo.nome }}</td>
+
+                <td>{{ modulo.predio.nome }}</td>
+
+                <td>{{ modulo.predio.rua.nome }}</td>
+
+                <td>
+
+                    <a
+                        href="{{ url_for('modulo.editar', id=modulo.id) }}"
+                        class="btn btn-warning btn-sm">
+
+                        Editar
+
+                    </a>
+
+                    <a
+                        href="{{ url_for('modulo.excluir', id=modulo.id) }}"
+                        class="btn btn-danger btn-sm"
+                        onclick="return confirm('Deseja excluir este módulo?')">
+
+                        Excluir
+
+                    </a>
+
+                </td>
+
+            </tr>
+
+        {% else %}
+
+            <tr>
+
+                <td colspan="5" class="text-center">
+                    Nenhum módulo cadastrado.
+                </td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

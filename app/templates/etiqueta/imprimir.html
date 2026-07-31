@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Etiqueta</title>
+
+    <style>
+
+        @page{
+
+            size:210mm 75mm;
+            margin:0;
+
+        }
+
+        *{
+
+            box-sizing:border-box;
+
+        }
+
+        body{
+
+            margin:0;
+            padding:0;
+            font-family:Arial, Helvetica, sans-serif;
+            background:white;
+
+        }
+
+        .etiqueta{
+
+            width:210mm;
+            height:75mm;
+
+            border:2px solid black;
+
+            padding:12px;
+
+            display:flex;
+            flex-direction:column;
+            justify-content:space-between;
+
+        }
+
+        .titulo{
+
+            text-align:center;
+            font-size:28pt;
+            font-weight:bold;
+
+        }
+
+        .linha{
+
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-end;
+
+        }
+
+        .bloco{
+
+            width:45%;
+            text-align:center;
+
+        }
+
+        .rotulo{
+
+            font-size:16pt;
+            font-weight:bold;
+
+        }
+
+        .valor{
+
+            font-size:20pt;
+            font-weight:bold;
+
+        }
+
+        .seta{
+
+            width:10%;
+            text-align:center;
+            font-size:60pt;
+            font-weight:bold;
+
+        }
+
+        .deposito{
+
+            font-size:18pt;
+            font-weight:bold;
+
+        }
+
+        @media print{
+
+            button{
+
+                display:none;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<button
+    onclick="window.print()"
+    style="margin:10px;">
+
+    Imprimir
+
+</button>
+
+<div class="etiqueta">
+
+    <div class="titulo">
+
+        {{ produto.descricao }}
+
+    </div>
+
+    <div class="linha">
+
+        <div class="bloco">
+
+            <div class="rotulo">
+
+                Cod. interno
+
+            </div>
+
+            <div class="valor">
+
+                {{ produto.codigo }}
+
+            </div>
+
+        </div>
+
+        <div class="bloco">
+
+            <div class="rotulo">
+
+                Cod. barras
+
+            </div>
+
+            <div class="valor">
+
+                {{ produto.codigo_barras }}
+
+            </div>
+
+        </div>
+
+        <div class="seta">
+
+            {% if indicador == "baixo" %}
+
+                ↓
+
+            {% elif indicador == "cima" %}
+
+                ↑
+
+            {% else %}
+
+                <div class="deposito">
+
+                    DEPÓSITO
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

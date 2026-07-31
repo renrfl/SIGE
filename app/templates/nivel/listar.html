@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Níveis{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <h2>Cadastro de Níveis</h2>
+
+        <a
+            href="{{ url_for('nivel.novo') }}"
+            class="btn btn-success">
+
+            Novo Nível
+
+        </a>
+
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for categoria, mensagem in messages %}
+
+                <div class="alert alert-{{ categoria }}">
+
+                    {{ mensagem }}
+
+                </div>
+
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <table class="table table-bordered table-hover align-middle">
+
+        <thead class="table-dark">
+
+            <tr>
+
+                <th width="80">ID</th>
+                <th>Nível</th>
+                <th>Módulo</th>
+                <th>Prédio</th>
+                <th>Rua</th>
+                <th width="180">Ações</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        {% for nivel in niveis %}
+
+            <tr>
+
+                <td>{{ nivel.id }}</td>
+
+                <td>{{ nivel.nome }}</td>
+
+                <td>{{ nivel.modulo.nome }}</td>
+
+                <td>{{ nivel.modulo.predio.nome }}</td>
+
+                <td>{{ nivel.modulo.predio.rua.nome }}</td>
+
+                <td>
+
+                    <a
+                        href="{{ url_for('nivel.editar', id=nivel.id) }}"
+                        class="btn btn-warning btn-sm">
+
+                        Editar
+
+                    </a>
+
+                    <a
+                        href="{{ url_for('nivel.excluir', id=nivel.id) }}"
+                        class="btn btn-danger btn-sm"
+                        onclick="return confirm('Deseja excluir este nível?')">
+
+                        Excluir
+
+                    </a>
+
+                </td>
+
+            </tr>
+
+        {% else %}
+
+            <tr>
+
+                <td colspan="6" class="text-center">
+
+                    Nenhum nível cadastrado.
+
+                </td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

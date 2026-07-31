@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}
+Consulta de Endereço
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-8">
+
+            <div class="card">
+
+                <div class="card-header bg-success text-white">
+
+                    Consulta de Endereço
+
+                </div>
+
+                <div class="card-body">
+
+                    <form method="POST">
+
+                        <div class="mb-3">
+
+                            <label
+                                for="pesquisa"
+                                class="form-label">
+
+                                Código do produto ou código de barras
+
+                            </label>
+
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="pesquisa"
+                                name="pesquisa"
+                                autofocus
+                                required>
+
+                        </div>
+
+                        <button
+                            type="submit"
+                            class="btn btn-success">
+
+                            Consultar
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+            {% if endereco %}
+
+                <div class="card mt-4">
+
+                    <div class="card-header">
+
+                        Resultado
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <h4 class="mb-3">
+
+                            {{ endereco.produto.codigo }}
+                            -
+                            {{ endereco.produto.descricao }}
+
+                        </h4>
+
+                        <table class="table table-bordered">
+
+                            <tbody>
+
+                                <tr>
+
+                                    <th width="200">
+                                        Código de barras
+                                    </th>
+
+                                    <td>
+                                        {{ endereco.produto.codigo_barras }}
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <th>
+                                        Rua
+                                    </th>
+
+                                    <td>
+                                        {{ endereco.posicao.nivel.modulo.predio.rua.nome }}
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <th>
+                                        Prédio
+                                    </th>
+
+                                    <td>
+                                        {{ endereco.posicao.nivel.modulo.predio.nome }}
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <th>
+                                        Módulo
+                                    </th>
+
+                                    <td>
+                                        {{ endereco.posicao.nivel.modulo.nome }}
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <th>
+                                        Nível
+                                    </th>
+
+                                    <td>
+                                        {{ endereco.posicao.nivel.nome }}
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <th>
+                                        Posição
+                                    </th>
+
+                                    <td>
+                                        {{ endereco.posicao.nome }}
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

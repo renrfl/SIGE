@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}
+
+{% if modulo %}
+Editar Módulo
+{% else %}
+Novo Módulo
+{% endif %}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    {% if modulo %}
+        <h2>Editar Módulo</h2>
+    {% else %}
+        <h2>Novo Módulo</h2>
+    {% endif %}
+
+    <form method="POST">
+
+        <div class="mb-3">
+
+            <label class="form-label">
+                Nome do Módulo
+            </label>
+
+            <input
+                type="text"
+                name="nome"
+                class="form-control"
+                maxlength="50"
+                required
+                value="{{ modulo.nome if modulo else '' }}">
+
+        </div>
+
+        <div class="mb-3">
+
+            <label class="form-label">
+                Prédio
+            </label>
+
+            <select
+                name="predio_id"
+                class="form-select"
+                required>
+
+                <option value="">
+                    Selecione um prédio
+                </option>
+
+                {% for predio in predios %}
+
+                    <option
+                        value="{{ predio.id }}"
+                        {% if modulo and modulo.predio_id == predio.id %}
+                            selected
+                        {% endif %}>
+
+                        {{ predio.rua.nome }} → {{ predio.nome }}
+
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+        <button
+            type="submit"
+            class="btn btn-success">
+
+            Salvar
+
+        </button>
+
+        <a
+            href="{{ url_for('modulo.listar') }}"
+            class="btn btn-secondary">
+
+            Cancelar
+
+        </a>
+
+    </form>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}
+
+{% if nivel %}
+Editar Nível
+{% else %}
+Novo Nível
+{% endif %}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    {% if nivel %}
+        <h2>Editar Nível</h2>
+    {% else %}
+        <h2>Novo Nível</h2>
+    {% endif %}
+
+    <form method="POST">
+
+        <div class="mb-3">
+
+            <label class="form-label">
+                Nome do Nível
+            </label>
+
+            <input
+                type="text"
+                name="nome"
+                class="form-control"
+                maxlength="50"
+                required
+                value="{{ nivel.nome if nivel else '' }}">
+
+        </div>
+
+        <div class="mb-3">
+
+            <label class="form-label">
+                Módulo
+            </label>
+
+            <select
+                name="modulo_id"
+                class="form-select"
+                required>
+
+                <option value="">
+                    Selecione um módulo
+                </option>
+
+                {% for modulo in modulos %}
+
+                    <option
+                        value="{{ modulo.id }}"
+                        {% if nivel and nivel.modulo_id == modulo.id %}
+                            selected
+                        {% endif %}>
+
+                        {{ modulo.predio.rua.nome }}
+                        →
+                        {{ modulo.predio.nome }}
+                        →
+                        {{ modulo.nome }}
+
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+        <button
+            type="submit"
+            class="btn btn-success">
+
+            Salvar
+
+        </button>
+
+        <a
+            href="{{ url_for('nivel.listar') }}"
+            class="btn btn-secondary">
+
+            Cancelar
+
+        </a>
+
+    </form>
+
+</div>
+
+{% endblock %}

@@ -7,9 +7,15 @@ class Predio(db.Model):
 
     __tablename__ = "predio"
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
-    nome = db.Column(db.String(50), nullable=False)
+    nome = db.Column(
+        db.String(50),
+        nullable=False
+    )
 
     rua_id = db.Column(
         db.Integer,
@@ -17,9 +23,19 @@ class Predio(db.Model):
         nullable=False
     )
 
-    ativo = db.Column(db.Boolean, default=True)
+    ativo = db.Column(
+        db.Boolean,
+        default=True
+    )
 
     data_cadastro = db.Column(
         db.DateTime,
         default=datetime.utcnow
+    )
+
+    modulos = db.relationship(
+        "Modulo",
+        backref="predio",
+        lazy=True,
+        cascade="all, delete-orphan"
     )

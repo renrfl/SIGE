@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Posições{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <h2>Cadastro de Posições</h2>
+
+        <a
+            href="{{ url_for('posicao.novo') }}"
+            class="btn btn-success">
+
+            Nova Posição
+
+        </a>
+
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for categoria, mensagem in messages %}
+
+                <div class="alert alert-{{ categoria }}">
+
+                    {{ mensagem }}
+
+                </div>
+
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <table class="table table-bordered table-hover align-middle">
+
+        <thead class="table-dark">
+
+            <tr>
+
+                <th width="80">ID</th>
+                <th>Posição</th>
+                <th>Nível</th>
+                <th>Módulo</th>
+                <th>Prédio</th>
+                <th>Rua</th>
+                <th width="180">Ações</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        {% for posicao in posicoes %}
+
+            <tr>
+
+                <td>{{ posicao.id }}</td>
+
+                <td>{{ posicao.nome }}</td>
+
+                <td>{{ posicao.nivel.nome }}</td>
+
+                <td>{{ posicao.nivel.modulo.nome }}</td>
+
+                <td>{{ posicao.nivel.modulo.predio.nome }}</td>
+
+                <td>{{ posicao.nivel.modulo.predio.rua.nome }}</td>
+
+                <td>
+
+                    <a
+                        href="{{ url_for('posicao.editar', id=posicao.id) }}"
+                        class="btn btn-warning btn-sm">
+
+                        Editar
+
+                    </a>
+
+                    <a
+                        href="{{ url_for('posicao.excluir', id=posicao.id) }}"
+                        class="btn btn-danger btn-sm"
+                        onclick="return confirm('Deseja excluir esta posição?')">
+
+                        Excluir
+
+                    </a>
+
+                </td>
+
+            </tr>
+
+        {% else %}
+
+            <tr>
+
+                <td colspan="7" class="text-center">
+
+                    Nenhuma posição cadastrada.
+
+                </td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

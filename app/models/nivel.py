@@ -7,9 +7,15 @@ class Nivel(db.Model):
 
     __tablename__ = "nivel"
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
-    nome = db.Column(db.String(50), nullable=False)
+    nome = db.Column(
+        db.String(50),
+        nullable=False
+    )
 
     modulo_id = db.Column(
         db.Integer,
@@ -17,9 +23,22 @@ class Nivel(db.Model):
         nullable=False
     )
 
-    ativo = db.Column(db.Boolean, default=True)
+    ativo = db.Column(
+        db.Boolean,
+        default=True
+    )
 
     data_cadastro = db.Column(
         db.DateTime,
         default=datetime.utcnow
     )
+
+    posicoes = db.relationship(
+        "Posicao",
+        backref="nivel",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
+
+    def __repr__(self):
+        return f"<Nivel {self.nome}>"
