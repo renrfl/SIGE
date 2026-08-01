@@ -23,7 +23,7 @@
 
         <a
             class="navbar-brand"
-            href="{{ url_for('home.index') }}">
+            href="{{ url_for('consulta.index') }}">
 
             SIGE
 
@@ -52,18 +52,6 @@
 
                     <a
                         class="nav-link"
-                        href="{{ url_for('home.index') }}">
-
-                        Dashboard
-
-                    </a>
-
-                </li>
-
-                <li class="nav-item">
-
-                    <a
-                        class="nav-link"
                         href="{{ url_for('consulta.index') }}">
 
                         Consulta
@@ -72,120 +60,164 @@
 
                 </li>
 
-                <li class="nav-item">
+                {% if session.get("usuario_id") %}
 
-                    <a
-                        class="nav-link"
-                        href="{{ url_for('produto.listar') }}">
+                    <li class="nav-item dropdown">
 
-                        Produtos
+                        <a
+                            class="nav-link dropdown-toggle"
+                            href="#"
+                            role="button"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false">
 
-                    </a>
+                            Administrativo
 
-                </li>
+                        </a>
 
-                <li class="nav-item">
+                        <ul class="dropdown-menu">
 
-                    <a
-                        class="nav-link"
-                        href="{{ url_for('endereco.listar') }}">
+                            <li>
 
-                        Endereçamentos
+                                <a
+                                    class="dropdown-item"
+                                    href="{{ url_for('produto.listar') }}">
 
-                    </a>
+                                    Produtos
 
-                </li>
+                                </a>
 
-                <li class="nav-item">
+                            </li>
 
-                    <a
-                        class="nav-link"
-                        href="{{ url_for('etiqueta.pesquisar') }}">
+                            <li>
 
-                        Etiquetas
+                                <a
+                                    class="dropdown-item"
+                                    href="{{ url_for('endereco.listar') }}">
 
-                    </a>
+                                    Endereçamentos
 
-                </li>
+                                </a>
 
-                <li class="nav-item dropdown">
+                            </li>
 
-                    <a
-                        class="nav-link dropdown-toggle"
-                        href="#"
-                        role="button"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false">
+                            <li>
 
-                        Estrutura
+                                <a
+                                    class="dropdown-item"
+                                    href="{{ url_for('etiqueta.pesquisar') }}">
 
-                    </a>
+                                    Etiquetas
 
-                    <ul class="dropdown-menu">
+                                </a>
 
-                        <li>
+                            </li>
 
-                            <a
-                                class="dropdown-item"
-                                href="{{ url_for('rua.listar') }}">
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
 
-                                Ruas
+                            <li>
 
-                            </a>
+                                <a
+                                    class="dropdown-item"
+                                    href="{{ url_for('rua.listar') }}">
 
-                        </li>
+                                    Ruas
 
-                        <li>
+                                </a>
 
-                            <a
-                                class="dropdown-item"
-                                href="{{ url_for('predio.listar') }}">
+                            </li>
 
-                                Prédios
+                            <li>
 
-                            </a>
+                                <a
+                                    class="dropdown-item"
+                                    href="{{ url_for('predio.listar') }}">
 
-                        </li>
+                                    Prédios
 
-                        <li>
+                                </a>
 
-                            <a
-                                class="dropdown-item"
-                                href="{{ url_for('modulo.listar') }}">
+                            </li>
 
-                                Módulos
+                            <li>
 
-                            </a>
+                                <a
+                                    class="dropdown-item"
+                                    href="{{ url_for('modulo.listar') }}">
 
-                        </li>
+                                    Módulos
 
-                        <li>
+                                </a>
 
-                            <a
-                                class="dropdown-item"
-                                href="{{ url_for('nivel.listar') }}">
+                            </li>
 
-                                Níveis
+                            <li>
 
-                            </a>
+                                <a
+                                    class="dropdown-item"
+                                    href="{{ url_for('nivel.listar') }}">
 
-                        </li>
+                                    Níveis
 
-                        <li>
+                                </a>
 
-                            <a
-                                class="dropdown-item"
-                                href="{{ url_for('posicao.listar') }}">
+                            </li>
 
-                                Posições
+                            <li>
 
-                            </a>
+                                <a
+                                    class="dropdown-item"
+                                    href="{{ url_for('posicao.listar') }}">
 
-                        </li>
+                                    Posições
 
-                    </ul>
+                                </a>
 
-                </li>
+                            </li>
+
+                        </ul>
+
+                    </li>
+
+                    <li class="nav-item">
+
+                        <span class="navbar-text me-3">
+
+                            {{ session.get("usuario_nome") }}
+
+                        </span>
+
+                    </li>
+
+                    <li class="nav-item">
+
+                        <a
+                            class="nav-link"
+                            href="{{ url_for('auth.logout') }}">
+
+                            Sair
+
+                        </a>
+
+                    </li>
+
+                {% else %}
+
+                    <li class="nav-item">
+
+                        <a
+                            class="nav-link"
+                            href="{{ url_for('auth.login') }}">
+
+                            Entrar
+
+                        </a>
+
+                    </li>
+
+                {% endif %}
 
             </ul>
 

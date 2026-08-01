@@ -20,7 +20,8 @@ def create_app():
         Nivel,
         Posicao,
         Produto,
-        ProdutoEndereco
+        ProdutoEndereco,
+        Usuario
     )
 
     from app.routes.home import home_bp
@@ -33,6 +34,7 @@ def create_app():
     from app.routes.endereco import endereco_bp
     from app.routes.consulta import consulta_bp
     from app.routes.etiqueta import etiqueta_bp
+    from app.routes.auth import auth_bp
 
     app.register_blueprint(home_bp)
     app.register_blueprint(rua_bp)
@@ -44,8 +46,10 @@ def create_app():
     app.register_blueprint(endereco_bp)
     app.register_blueprint(consulta_bp)
     app.register_blueprint(etiqueta_bp)
+    app.register_blueprint(auth_bp)
 
     with app.app_context():
+
         db.create_all()
 
     return app

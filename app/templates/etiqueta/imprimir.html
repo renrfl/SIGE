@@ -5,106 +5,139 @@
 
     <meta charset="UTF-8">
 
-    <title>Etiqueta</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Etiqueta - {{ produto.descricao }}</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.12.3/dist/JsBarcode.all.min.js"></script>
 
     <style>
 
-        @page{
-
-            size:210mm 75mm;
-            margin:0;
-
+        @page {
+            size: 210mm 75mm;
+            margin: 0;
         }
 
-        *{
-
-            box-sizing:border-box;
-
+        * {
+            box-sizing: border-box;
         }
 
-        body{
-
-            margin:0;
-            padding:0;
-            font-family:Arial, Helvetica, sans-serif;
-            background:white;
-
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: white;
         }
 
-        .etiqueta{
-
-            width:210mm;
-            height:75mm;
-
-            border:2px solid black;
-
-            padding:12px;
-
-            display:flex;
-            flex-direction:column;
-            justify-content:space-between;
-
+        .acoes {
+            margin: 10px;
         }
 
-        .titulo{
-
-            text-align:center;
-            font-size:28pt;
-            font-weight:bold;
-
+        .acoes button,
+        .acoes a {
+            padding: 8px 16px;
+            margin-right: 5px;
+            border: 0;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
         }
 
-        .linha{
-
-            display:flex;
-            justify-content:space-between;
-            align-items:flex-end;
-
+        .botao-imprimir {
+            background: #198754;
+            color: white;
         }
 
-        .bloco{
-
-            width:45%;
-            text-align:center;
-
+        .botao-voltar {
+            background: #6c757d;
+            color: white;
         }
 
-        .rotulo{
-
-            font-size:16pt;
-            font-weight:bold;
-
+        .etiqueta {
+            width: 210mm;
+            height: 75mm;
+            padding: 5mm;
+            border: 1px solid black;
+            display: grid;
+            grid-template-columns: 38mm 1fr 30mm;
+            grid-template-rows: 23mm 42mm;
+            gap: 2mm;
+            background: white;
         }
 
-        .valor{
-
-            font-size:20pt;
-            font-weight:bold;
-
+        .descricao {
+            grid-column: 1 / 4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 25pt;
+            font-weight: bold;
+            line-height: 1;
+            overflow: hidden;
         }
 
-        .seta{
-
-            width:10%;
-            text-align:center;
-            font-size:60pt;
-            font-weight:bold;
-
+        .codigo-interno {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid black;
         }
 
-        .deposito{
-
-            font-size:18pt;
-            font-weight:bold;
-
+        .rotulo {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 2mm;
         }
 
-        @media print{
+        .numero-interno {
+            font-size: 25pt;
+            font-weight: bold;
+        }
 
-            button{
+        .codigo-barras {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
 
-                display:none;
+        #barcode {
+            max-width: 100%;
+            max-height: 38mm;
+        }
 
+        .indicador {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid black;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .seta {
+            font-size: 55pt;
+            line-height: 1;
+        }
+
+        .deposito {
+            font-size: 15pt;
+            font-weight: bold;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+        }
+
+        @media print {
+
+            .acoes {
+                display: none;
+            }
+
+            .etiqueta {
+                border: none;
             }
 
         }
@@ -115,81 +148,103 @@
 
 <body>
 
-<button
-    onclick="window.print()"
-    style="margin:10px;">
+<div class="acoes">
 
-    Imprimir
+    <button
+        type="button"
+        class="botao-imprimir"
+        onclick="window.print()">
 
-</button>
+        Imprimir
+
+    </button>
+
+    <a
+        href="{{ url_for('etiqueta.pesquisar') }}"
+        class="botao-voltar">
+
+        Voltar
+
+    </a>
+
+</div>
 
 <div class="etiqueta">
 
-    <div class="titulo">
+    <div class="descricao">
 
         {{ produto.descricao }}
 
     </div>
 
-    <div class="linha">
+    <div class="codigo-interno">
 
-        <div class="bloco">
-
-            <div class="rotulo">
-
-                Cod. interno
-
-            </div>
-
-            <div class="valor">
-
-                {{ produto.codigo }}
-
-            </div>
-
+        <div class="rotulo">
+            CÓD. INTERNO
         </div>
 
-        <div class="bloco">
-
-            <div class="rotulo">
-
-                Cod. barras
-
-            </div>
-
-            <div class="valor">
-
-                {{ produto.codigo_barras }}
-
-            </div>
-
-        </div>
-
-        <div class="seta">
-
-            {% if indicador == "baixo" %}
-
-                ↓
-
-            {% elif indicador == "cima" %}
-
-                ↑
-
-            {% else %}
-
-                <div class="deposito">
-
-                    DEPÓSITO
-
-                </div>
-
-            {% endif %}
-
+        <div class="numero-interno">
+            {{ produto.codigo }}
         </div>
 
     </div>
 
+    <div class="codigo-barras">
+
+        <svg id="barcode"></svg>
+
+    </div>
+
+    <div class="indicador">
+
+        {% if indicador == "baixo" %}
+
+            <div class="seta">
+                ↓
+            </div>
+
+        {% elif indicador == "cima" %}
+
+            <div class="seta">
+                ↑
+            </div>
+
+        {% else %}
+
+            <div class="deposito">
+                DEPÓSITO
+            </div>
+
+        {% endif %}
+
+    </div>
+
 </div>
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        JsBarcode(
+            "#barcode",
+            "{{ produto.codigo_barras }}",
+            {
+                format: "CODE128",
+                width: 2,
+                height: 70,
+                displayValue: true,
+                fontSize: 18,
+                fontOptions: "bold",
+                textMargin: 4,
+                margin: 0,
+                background: "#ffffff",
+                lineColor: "#000000"
+            }
+        );
+
+    });
+
+</script>
 
 </body>
 
