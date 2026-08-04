@@ -1,63 +1,24 @@
 {% extends "base.html" %}
 
 {% block title %}
-Produtos - SIGE
+Usuários - SIGE
 {% endblock %}
 
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
 
-    <h1>Produtos</h1>
+    <h1>Usuários</h1>
 
-    <div class="d-flex gap-2">
+    <a
+        href="{{ url_for('usuario.novo') }}"
+        class="btn btn-primary">
 
-        <a
-            href="{{ url_for('produto.importar') }}"
-            class="btn btn-secondary">
+        Novo usuário
 
-            Importar CSV
-
-        </a>
-
-        <a
-            href="{{ url_for('produto.novo') }}"
-            class="btn btn-primary">
-
-            Novo produto
-
-        </a>
-
-    </div>
+    </a>
 
 </div>
-
-{% with mensagens = get_flashed_messages(with_categories=true) %}
-
-    {% if mensagens %}
-
-        {% for categoria, mensagem in mensagens %}
-
-            <div
-                class="alert alert-{{ categoria }} alert-dismissible fade show"
-                role="alert">
-
-                {{ mensagem }}
-
-                <button
-                    type="button"
-                    class="btn-close"
-                    data-bs-dismiss="alert"
-                    aria-label="Fechar">
-                </button>
-
-            </div>
-
-        {% endfor %}
-
-    {% endif %}
-
-{% endwith %}
 
 <div class="card">
 
@@ -73,13 +34,13 @@ Produtos - SIGE
 
                         <th>ID</th>
 
-                        <th>Código</th>
+                        <th>Nome</th>
 
-                        <th>Código de barras</th>
-
-                        <th>Descrição</th>
+                        <th>Login</th>
 
                         <th>Status</th>
+
+                        <th>Cadastro</th>
 
                         <th class="text-end">
                             Ações
@@ -91,29 +52,25 @@ Produtos - SIGE
 
                 <tbody>
 
-                    {% for produto in produtos %}
+                    {% for usuario in usuarios %}
 
                         <tr>
 
                             <td>
-                                {{ produto.id }}
+                                {{ usuario.id }}
                             </td>
 
                             <td>
-                                {{ produto.codigo }}
+                                {{ usuario.nome }}
                             </td>
 
                             <td>
-                                {{ produto.codigo_barras }}
-                            </td>
-
-                            <td>
-                                {{ produto.descricao }}
+                                {{ usuario.login }}
                             </td>
 
                             <td>
 
-                                {% if produto.ativo %}
+                                {% if usuario.ativo %}
 
                                     <span class="badge text-bg-success">
                                         Ativo
@@ -129,10 +86,24 @@ Produtos - SIGE
 
                             </td>
 
+                            <td>
+
+                                {% if usuario.data_cadastro %}
+
+                                    {{ usuario.data_cadastro.strftime('%d/%m/%Y %H:%M') }}
+
+                                {% else %}
+
+                                    -
+
+                                {% endif %}
+
+                            </td>
+
                             <td class="text-end">
 
                                 <a
-                                    href="{{ url_for('produto.editar', id=produto.id) }}"
+                                    href="{{ url_for('usuario.editar', usuario_id=usuario.id) }}"
                                     class="btn btn-sm btn-warning">
 
                                     Editar
@@ -140,11 +111,10 @@ Produtos - SIGE
                                 </a>
 
                                 <a
-                                    href="{{ url_for('produto.excluir', id=produto.id) }}"
-                                    class="btn btn-sm btn-danger"
-                                    onclick="return confirm('Deseja realmente excluir este produto?')">
+                                    href="{{ url_for('usuario.alterar_senha', usuario_id=usuario.id) }}"
+                                    class="btn btn-sm btn-secondary">
 
-                                    Excluir
+                                    Alterar senha
 
                                 </a>
 
@@ -160,7 +130,7 @@ Produtos - SIGE
                                 colspan="6"
                                 class="text-center text-muted">
 
-                                Nenhum produto cadastrado.
+                                Nenhum usuário cadastrado.
 
                             </td>
 

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}
+
+    {% if usuario %}
+        Editar Usuário - SIGE
+    {% else %}
+        Novo Usuário - SIGE
+    {% endif %}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+
+    <div class="col-lg-6">
+
+        <div class="card">
+
+            <div class="card-header">
+
+                {% if usuario %}
+                    Editar usuário
+                {% else %}
+                    Cadastrar usuário
+                {% endif %}
+
+            </div>
+
+            <div class="card-body">
+
+                <form method="POST">
+
+                    <div class="mb-3">
+
+                        <label
+                            for="nome"
+                            class="form-label">
+
+                            Nome
+
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="nome"
+                            name="nome"
+                            maxlength="100"
+                            required
+                            autofocus
+                            value="{{ request.form.get('nome', usuario.nome if usuario else '') }}">
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label
+                            for="login"
+                            class="form-label">
+
+                            Login
+
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="login"
+                            name="login"
+                            maxlength="50"
+                            required
+                            autocomplete="username"
+                            value="{{ request.form.get('login', usuario.login if usuario else '') }}">
+
+                    </div>
+
+                    {% if not usuario %}
+
+                        <div class="mb-3">
+
+                            <label
+                                for="senha"
+                                class="form-label">
+
+                                Senha
+
+                            </label>
+
+                            <input
+                                type="password"
+                                class="form-control"
+                                id="senha"
+                                name="senha"
+                                required
+                                autocomplete="new-password">
+
+                        </div>
+
+                        <div class="mb-3">
+
+                            <label
+                                for="confirmar_senha"
+                                class="form-label">
+
+                                Confirmar senha
+
+                            </label>
+
+                            <input
+                                type="password"
+                                class="form-control"
+                                id="confirmar_senha"
+                                name="confirmar_senha"
+                                required
+                                autocomplete="new-password">
+
+                        </div>
+
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+
+                        <a
+                            href="{{ url_for('usuario.listar') }}"
+                            class="btn btn-secondary">
+
+                            Voltar
+
+                        </a>
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary">
+
+                            {% if usuario %}
+                                Salvar alterações
+                            {% else %}
+                                Cadastrar usuário
+                            {% endif %}
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -7,7 +7,10 @@ class Produto(db.Model):
 
     __tablename__ = "produto"
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
     codigo = db.Column(
         db.Integer,
@@ -17,7 +20,7 @@ class Produto(db.Model):
 
     codigo_barras = db.Column(
         db.String(30),
-        nullable=False,
+        nullable=True,
         unique=True
     )
 

@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, redirect, request, session, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 
@@ -35,18 +35,75 @@ def create_app():
     from app.routes.consulta import consulta_bp
     from app.routes.etiqueta import etiqueta_bp
     from app.routes.auth import auth_bp
+    from app.routes.usuario import usuario_bp
+
+    @app.before_request
+    def proteger_area_administrativa():
+
+        if not request.path.startswith("/admin"):
+            return None
+
+        if request.endpoint in (
+            "auth.login",
+            "static"
+        ):
+            return None
+
+        if "usuario_id" not in session:
+            return redirect(
+                url_for("auth.login")
+            )
+
+        return None
 
     app.register_blueprint(home_bp)
-    app.register_blueprint(rua_bp)
-    app.register_blueprint(predio_bp)
-    app.register_blueprint(modulo_bp)
-    app.register_blueprint(nivel_bp)
-    app.register_blueprint(posicao_bp)
-    app.register_blueprint(produto_bp)
-    app.register_blueprint(endereco_bp)
     app.register_blueprint(consulta_bp)
-    app.register_blueprint(etiqueta_bp)
     app.register_blueprint(auth_bp)
+
+    app.register_blueprint(
+        rua_bp,
+        url_prefix="/admin/ruas"
+    )
+
+    app.register_blueprint(
+        predio_bp,
+        url_prefix="/admin/predios"
+    )
+
+    app.register_blueprint(
+        modulo_bp,
+        url_prefix="/admin/modulos"
+    )
+
+    app.register_blueprint(
+        nivel_bp,
+        url_prefix="/admin/niveis"
+    )
+
+    app.register_blueprint(
+        posicao_bp,
+        url_prefix="/admin/posicoes"
+    )
+
+    app.register_blueprint(
+        produto_bp,
+        url_prefix="/admin/produtos"
+    )
+
+    app.register_blueprint(
+        endereco_bp,
+        url_prefix="/admin/enderecos"
+    )
+
+    app.register_blueprint(
+        etiqueta_bp,
+        url_prefix="/admin/etiquetas"
+    )
+
+    app.register_blueprint(
+        usuario_bp,
+        url_prefix="/admin/usuarios"
+    )
 
     with app.app_context():
 

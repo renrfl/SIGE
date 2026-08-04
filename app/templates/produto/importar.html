@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}
+Importar Produtos - SIGE
+{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+
+    <div class="col-lg-8">
+
+        <div class="card">
+
+            <div class="card-header">
+
+                Importar produtos por CSV
+
+            </div>
+
+            <div class="card-body">
+
+                <p>
+                    Selecione um arquivo CSV exportado do WinThor ou preparado
+                    com os dados dos produtos.
+                </p>
+
+                <p>
+                    Produtos novos serão cadastrados e produtos existentes serão
+                    atualizados pelo código interno. Os endereçamentos já cadastrados
+                    não serão alterados.
+                </p>
+
+                <div class="alert alert-info">
+
+                    <strong>Cabeçalho esperado:</strong>
+
+                    <pre class="mb-0 mt-2">codigo;codigo_barras;descricao;ativo</pre>
+
+                </div>
+
+                <div class="alert alert-secondary">
+
+                    <strong>Exemplo:</strong>
+
+                    <pre class="mb-0 mt-2">codigo;codigo_barras;descricao;ativo
+1001;7891234567890;ARROZ TIPO 1 5KG;SIM
+1002;7891234567891;FEIJAO CARIOCA 1KG;SIM
+1003;7891234567892;PRODUTO DESCONTINUADO;NAO</pre>
+
+                </div>
+
+                <form
+                    method="POST"
+                    enctype="multipart/form-data">
+
+                    <div class="mb-3">
+
+                        <label
+                            for="arquivo"
+                            class="form-label">
+
+                            Arquivo CSV
+
+                        </label>
+
+                        <input
+                            type="file"
+                            class="form-control"
+                            id="arquivo"
+                            name="arquivo"
+                            accept=".csv,text/csv"
+                            required>
+
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+
+                        <a
+                            href="{{ url_for('produto.listar') }}"
+                            class="btn btn-secondary">
+
+                            Voltar
+
+                        </a>
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary">
+
+                            Importar produtos
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
