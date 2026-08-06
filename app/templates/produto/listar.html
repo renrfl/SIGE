@@ -81,6 +81,8 @@ Produtos - SIGE
 
                         <th>Status</th>
 
+                        <th>Endereçamento</th>
+
                         <th class="text-end">
                             Ações
                         </th>
@@ -104,7 +106,19 @@ Produtos - SIGE
                             </td>
 
                             <td>
-                                {{ produto.codigo_barras }}
+
+                                {% if produto.codigo_barras %}
+
+                                    {{ produto.codigo_barras }}
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        -
+                                    </span>
+
+                                {% endif %}
+
                             </td>
 
                             <td>
@@ -123,6 +137,28 @@ Produtos - SIGE
 
                                     <span class="badge text-bg-secondary">
                                         Inativo
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if produto.enderecado %}
+
+                                    <span
+                                        class="badge text-bg-success"
+                                        title="{{ produto.total_enderecos }} endereço(s) cadastrado(s)">
+
+                                        Endereçado
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge text-bg-danger">
+                                        Não endereçado
                                     </span>
 
                                 {% endif %}
@@ -157,7 +193,7 @@ Produtos - SIGE
                         <tr>
 
                             <td
-                                colspan="6"
+                                colspan="7"
                                 class="text-center text-muted">
 
                                 Nenhum produto cadastrado.

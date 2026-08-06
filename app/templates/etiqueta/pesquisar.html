@@ -8,13 +8,13 @@ Etiquetas
 
 <div class="row justify-content-center">
 
-    <div class="col-lg-6">
+    <div class="col-lg-7">
 
         <div class="card">
 
             <div class="card-header bg-success text-white">
 
-                Gerar Etiqueta de Produto
+                Gerar Etiquetas de Produtos
 
             </div>
 
@@ -25,21 +25,36 @@ Etiquetas
                     <div class="mb-3">
 
                         <label
-                            for="codigo"
+                            for="codigos"
                             class="form-label">
 
-                            Código interno do produto
+                            Códigos internos dos produtos
 
                         </label>
 
-                        <input
-                            type="text"
+                        <textarea
                             class="form-control"
-                            id="codigo"
-                            name="codigo"
+                            id="codigos"
+                            name="codigos"
+                            rows="8"
                             inputmode="numeric"
                             autofocus
-                            required>
+                            required
+                            placeholder="Digite um código por linha. Exemplo:&#10;1001&#10;1002&#10;1003">{{ request.form.get("codigos", "") }}</textarea>
+
+                        <div class="form-text">
+
+                            Informe um ou vários códigos. Você pode separar os códigos por linha,
+                            espaço, vírgula ou ponto e vírgula.
+
+                        </div>
+
+                    </div>
+
+                    <div class="alert alert-info">
+
+                        A impressão será organizada automaticamente em até
+                        <strong>3 etiquetas por folha A4</strong>.
 
                     </div>
 
@@ -47,7 +62,7 @@ Etiquetas
                         type="submit"
                         class="btn btn-success">
 
-                        Gerar etiqueta
+                        Gerar etiquetas
 
                     </button>
 

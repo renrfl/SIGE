@@ -7,14 +7,14 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>Etiqueta - {{ produto.descricao }}</title>
+    <title>Impressão de Etiquetas - SIGE</title>
 
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.12.3/dist/JsBarcode.all.min.js"></script>
 
     <style>
 
         @page {
-            size: 210mm 75mm;
+            size: A4 portrait;
             margin: 0;
         }
 
@@ -22,6 +22,7 @@
             box-sizing: border-box;
         }
 
+        html,
         body {
             margin: 0;
             padding: 0;
@@ -54,9 +55,19 @@
             color: white;
         }
 
+        .folha {
+            width: 210mm;
+            min-height: 297mm;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            background: white;
+        }
+
         .etiqueta {
             width: 210mm;
             height: 75mm;
+            min-height: 75mm;
             padding: 5mm;
             border: 1px solid black;
             display: grid;
@@ -64,6 +75,8 @@
             grid-template-rows: 23mm 42mm;
             gap: 2mm;
             background: white;
+            break-inside: avoid;
+            page-break-inside: avoid;
         }
 
         .descricao {
@@ -102,11 +115,17 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            text-align: center;
         }
 
-        #barcode {
+        .codigo-barras svg {
             max-width: 100%;
             max-height: 38mm;
+        }
+
+        .sem-codigo-barras {
+            font-size: 12pt;
+            font-weight: bold;
         }
 
         .indicador {
@@ -130,10 +149,29 @@
             transform: rotate(180deg);
         }
 
+        @media screen {
+
+            .folha {
+                margin-bottom: 10mm;
+                box-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
+            }
+
+        }
+
         @media print {
 
             .acoes {
                 display: none;
+            }
+
+            .folha {
+                page-break-after: always;
+                break-after: page;
+            }
+
+            .folha:last-child {
+                page-break-after: auto;
+                break-after: auto;
             }
 
             .etiqueta {
@@ -169,78 +207,131 @@
 
 </div>
 
-<div class="etiqueta">
+{% if etiquetas is defined %}
 
-    <div class="descricao">
+    {% set lista_etiquetas = etiquetas %}
 
-        {{ produto.descricao }}
+{% else %}
+
+    {% set lista_etiquetas = [
+        {
+            "produto": produto,
+            "endereco": endereco,
+            "indicador": indicador
+        }
+    ] %}
+
+{% endif %}
+
+{% for grupo in lista_etiquetas | batch(3) %}
+
+    <div class="folha">
+
+        {% for item in grupo %}
+
+            {% if item %}
+
+                <div class="etiqueta">
+
+                    <div class="descricao">
+
+                        {{ item.produto.descricao }}
+
+                    </div>
+
+                    <div class="codigo-interno">
+
+                        <div class="rotulo">
+                            CÓD. INTERNO
+                        </div>
+
+                        <div class="numero-interno">
+                            {{ item.produto.codigo }}
+                        </div>
+
+                    </div>
+
+                    <div class="codigo-barras">
+
+                        {% if item.produto.codigo_barras %}
+
+                            <svg
+                                class="barcode"
+                                data-codigo="{{ item.produto.codigo_barras }}">
+                            </svg>
+
+                        {% else %}
+
+                            <div class="sem-codigo-barras">
+                                SEM CÓDIGO<br>DE BARRAS
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                    <div class="indicador">
+
+                        {% if item.indicador == "baixo" %}
+
+                            <div class="seta">
+                                ↓
+                            </div>
+
+                        {% elif item.indicador == "cima" %}
+
+                            <div class="seta">
+                                ↑
+                            </div>
+
+                        {% else %}
+
+                            <div class="deposito">
+                                DEPÓSITO
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            {% endif %}
+
+        {% endfor %}
 
     </div>
 
-    <div class="codigo-interno">
-
-        <div class="rotulo">
-            CÓD. INTERNO
-        </div>
-
-        <div class="numero-interno">
-            {{ produto.codigo }}
-        </div>
-
-    </div>
-
-    <div class="codigo-barras">
-
-        <svg id="barcode"></svg>
-
-    </div>
-
-    <div class="indicador">
-
-        {% if indicador == "baixo" %}
-
-            <div class="seta">
-                ↓
-            </div>
-
-        {% elif indicador == "cima" %}
-
-            <div class="seta">
-                ↑
-            </div>
-
-        {% else %}
-
-            <div class="deposito">
-                DEPÓSITO
-            </div>
-
-        {% endif %}
-
-    </div>
-
-</div>
+{% endfor %}
 
 <script>
 
     document.addEventListener("DOMContentLoaded", function () {
 
-        JsBarcode(
-            "#barcode",
-            "{{ produto.codigo_barras }}",
-            {
-                format: "CODE128",
-                width: 2,
-                height: 70,
-                displayValue: true,
-                fontSize: 18,
-                fontOptions: "bold",
-                textMargin: 4,
-                margin: 0,
-                background: "#ffffff",
-                lineColor: "#000000"
-            }
+        const codigosBarras = document.querySelectorAll(
+            ".barcode"
         );
+
+        codigosBarras.forEach(function (elemento) {
+
+            JsBarcode(
+                elemento,
+                elemento.dataset.codigo,
+                {
+                    format: "CODE128",
+                    width: 2,
+                    height: 70,
+                    displayValue: true,
+                    fontSize: 18,
+                    fontOptions: "bold",
+                    textMargin: 4,
+                    margin: 0,
+                    background: "#ffffff",
+                    lineColor: "#000000"
+                }
+            );
+
+        });
 
     });
 

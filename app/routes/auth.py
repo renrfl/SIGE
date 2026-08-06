@@ -62,7 +62,7 @@ def login():
             )
 
             return redirect(
-                url_for("home.index")
+                url_for("home.dashboard")
             )
 
         flash(

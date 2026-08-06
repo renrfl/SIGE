@@ -20,17 +20,119 @@ Novo Endereçamento
         <h2>Novo Endereçamento</h2>
     {% endif %}
 
+    <p class="text-muted">
+
+        Selecione um produto ativo e uma posição.
+        O status de cada opção aparece diretamente na lista.
+
+    </p>
+
+    {% if conflito %}
+
+        <div
+            class="alert alert-warning"
+            role="alert">
+
+            <h4 class="alert-heading">
+                Posição já ocupada
+            </h4>
+
+            <p class="mb-3">
+
+                A posição selecionada já possui outro produto endereçado.
+                Nenhuma alteração foi feita até este momento.
+
+            </p>
+
+            <div class="card border-warning mb-3">
+
+                <div class="card-body">
+
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+
+                            <div class="text-muted mb-1">
+                                Produto atualmente na posição
+                            </div>
+
+                            <div class="fw-bold">
+
+                                {{ conflito.produto_atual.codigo }}
+                                -
+                                {{ conflito.produto_atual.descricao }}
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-md-6">
+
+                            <div class="text-muted mb-1">
+                                Produto que entrará na posição
+                            </div>
+
+                            <div class="fw-bold text-success">
+
+                                {{ conflito.produto_novo.codigo }}
+                                -
+                                {{ conflito.produto_novo.descricao }}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <hr>
+
+                    <div class="text-muted mb-1">
+                        Posição
+                    </div>
+
+                    <div class="fw-bold">
+
+                        {{ conflito.posicao.nivel.modulo.predio.rua.nome }}
+                        →
+                        {{ conflito.posicao.nivel.modulo.predio.nome }}
+                        →
+                        {{ conflito.posicao.nivel.modulo.nome }}
+                        →
+                        {{ conflito.posicao.nivel.nome }}
+                        →
+                        {{ conflito.posicao.nome }}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <p class="mb-0">
+
+                Ao confirmar, o produto atual será retirado desta posição
+                e o novo produto será vinculado a ela.
+
+            </p>
+
+        </div>
+
+    {% endif %}
+
     <form method="POST">
 
         <div class="mb-3">
 
-            <label class="form-label">
+            <label
+                for="produto_id"
+                class="form-label">
 
                 Produto
 
             </label>
 
             <select
+                id="produto_id"
                 name="produto_id"
                 class="form-select"
                 required>
@@ -43,7 +145,9 @@ Novo Endereçamento
 
                     <option
                         value="{{ produto.id }}"
-                        {% if endereco and endereco.produto_id == produto.id %}
+                        {% if produto_id_selecionado == produto.id %}
+                            selected
+                        {% elif produto_id_selecionado is none and endereco and endereco.produto_id == produto.id %}
                             selected
                         {% endif %}>
 
@@ -51,23 +155,43 @@ Novo Endereçamento
                         -
                         {{ produto.descricao }}
 
+                        {% if produto.enderecado %}
+                            — JÁ ENDEREÇADO
+                            {% if produto.total_enderecos > 1 %}
+                                ({{ produto.total_enderecos }} endereços)
+                            {% endif %}
+                        {% else %}
+                            — LIVRE
+                        {% endif %}
+
                     </option>
 
                 {% endfor %}
 
             </select>
 
+            <div class="form-text">
+
+                Apenas produtos ativos aparecem nesta lista.
+                Produtos já endereçados continuam disponíveis para permitir
+                futuros endereços adicionais.
+
+            </div>
+
         </div>
 
         <div class="mb-3">
 
-            <label class="form-label">
+            <label
+                for="posicao_id"
+                class="form-label">
 
                 Posição
 
             </label>
 
             <select
+                id="posicao_id"
                 name="posicao_id"
                 class="form-select"
                 required>
@@ -80,7 +204,9 @@ Novo Endereçamento
 
                     <option
                         value="{{ posicao.id }}"
-                        {% if endereco and endereco.posicao_id == posicao.id %}
+                        {% if posicao_id_selecionada == posicao.id %}
+                            selected
+                        {% elif posicao_id_selecionada is none and endereco and endereco.posicao_id == posicao.id %}
                             selected
                         {% endif %}>
 
@@ -94,29 +220,84 @@ Novo Endereçamento
                         →
                         {{ posicao.nome }}
 
+                        {% if posicao.ocupada and posicao.produto_ocupante %}
+                            — OCUPADA:
+                            {{ posicao.produto_ocupante.codigo }}
+                            -
+                            {{ posicao.produto_ocupante.descricao }}
+                        {% else %}
+                            — LIVRE
+                        {% endif %}
+
                     </option>
 
                 {% endfor %}
 
             </select>
 
+            <div class="form-text">
+
+                Posições ocupadas continuam selecionáveis para permitir troca,
+                mas o SIGE exigirá confirmação antes de substituir o produto atual.
+
+            </div>
+
         </div>
 
-        <button
-            type="submit"
-            class="btn btn-success">
+        {% if conflito %}
 
-            Salvar
+            <button
+                type="submit"
+                name="confirmar_substituicao"
+                value="sim"
+                class="btn btn-danger"
+                onclick="return confirm('Confirma a retirada do produto atual e a substituição nesta posição?')">
 
-        </button>
+                Confirmar substituição
 
-        <a
-            href="{{ url_for('endereco.listar') }}"
-            class="btn btn-secondary">
+            </button>
 
-            Cancelar
+            {% if endereco %}
 
-        </a>
+                <a
+                    href="{{ url_for('endereco.editar', id=endereco.id) }}"
+                    class="btn btn-secondary">
+
+                    Cancelar substituição
+
+                </a>
+
+            {% else %}
+
+                <a
+                    href="{{ url_for('endereco.novo') }}"
+                    class="btn btn-secondary">
+
+                    Cancelar substituição
+
+                </a>
+
+            {% endif %}
+
+        {% else %}
+
+            <button
+                type="submit"
+                class="btn btn-success">
+
+                Salvar
+
+            </button>
+
+            <a
+                href="{{ url_for('endereco.listar') }}"
+                class="btn btn-secondary">
+
+                Cancelar
+
+            </a>
+
+        {% endif %}
 
     </form>
 

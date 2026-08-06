@@ -2,10 +2,11 @@ import csv
 import io
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from app import db
-from app.models import Produto
+from app.models import Produto, ProdutoEndereco
 
 
 produto_bp = Blueprint(
@@ -113,9 +114,30 @@ def ler_arquivo_csv(arquivo):
 @produto_bp.route("/")
 def listar():
 
-    produtos = Produto.query.order_by(
-        Produto.descricao
-    ).all()
+    resultados = (
+        db.session.query(
+            Produto,
+            func.count(
+                ProdutoEndereco.id
+            ).label("total_enderecos")
+        )
+        .outerjoin(
+            ProdutoEndereco,
+            ProdutoEndereco.produto_id == Produto.id
+        )
+        .group_by(Produto.id)
+        .order_by(Produto.descricao)
+        .all()
+    )
+
+    produtos = []
+
+    for produto, total_enderecos in resultados:
+
+        produto.enderecado = total_enderecos > 0
+        produto.total_enderecos = total_enderecos
+
+        produtos.append(produto)
 
     return render_template(
         "produto/listar.html",

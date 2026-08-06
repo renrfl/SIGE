@@ -1,114 +1,227 @@
 {% extends "base.html" %}
 
 {% block title %}
-Dashboard
+Dashboard - SIGE
 {% endblock %}
 
 {% block content %}
 
-<h2 class="mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
 
-Dashboard
+    <div>
 
-</h2>
+        <h1 class="h2 mb-1">
+            Dashboard
+        </h1>
 
-<div class="row">
+        <p class="text-muted mb-0">
+            Acompanhamento do endereçamento do depósito
+        </p>
 
-<div class="col-md-3">
+    </div>
+
+</div>
+
+<div class="row g-3 mb-4">
+
+    <div class="col-md-6 col-xl-3">
+
+        <div class="card shadow-sm h-100">
+
+            <div class="card-body">
+
+                <div class="text-muted mb-2">
+                    Produtos cadastrados
+                </div>
+
+                <div class="display-6 fw-bold">
+                    {{ total_produtos }}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+
+        <div class="card shadow-sm h-100 border-success">
+
+            <div class="card-body">
+
+                <div class="text-success mb-2">
+                    Produtos endereçados
+                </div>
+
+                <div class="display-6 fw-bold text-success">
+                    {{ produtos_enderecados }}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+
+        <div class="card shadow-sm h-100 border-danger">
+
+            <div class="card-body">
+
+                <div class="text-danger mb-2">
+                    Produtos pendentes
+                </div>
+
+                <div class="display-6 fw-bold text-danger">
+                    {{ produtos_pendentes }}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+
+        <div class="card shadow-sm h-100">
+
+            <div class="card-body">
+
+                <div class="text-muted mb-2">
+                    Posições cadastradas
+                </div>
+
+                <div class="display-6 fw-bold">
+                    {{ total_posicoes }}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card shadow-sm mb-4">
+
+    <div class="card-body">
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+
+            <h2 class="h5 mb-0">
+                Progresso do endereçamento
+            </h2>
+
+            <strong>
+                {{ percentual_enderecado }}%
+            </strong>
+
+        </div>
+
+        <div
+            class="progress"
+            role="progressbar"
+            aria-label="Progresso do endereçamento"
+            aria-valuenow="{{ percentual_enderecado }}"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            style="height: 24px;">
+
+            <div
+                class="progress-bar bg-success"
+                style="width: {{ percentual_enderecado }}%;">
+
+                {% if percentual_enderecado >= 10 %}
+
+                    {{ percentual_enderecado }}%
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        <div class="d-flex justify-content-between mt-2 small text-muted">
+
+            <span>
+                {{ produtos_enderecados }} concluídos
+            </span>
+
+            <span>
+                {{ produtos_pendentes }} pendentes
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
 
 <div class="card shadow-sm">
 
-<div class="card-body">
+    <div class="card-header">
+        Acesso rápido
+    </div>
 
-<h5>
+    <div class="card-body">
 
-Produtos
+        <div class="row g-3">
 
-</h5>
+            <div class="col-md-6 col-xl-3">
 
-<h2>
+                <a
+                    href="{{ url_for('endereco.novo') }}"
+                    class="btn btn-success w-100 py-3">
 
-0
+                    Novo endereçamento
 
-</h2>
+                </a>
 
-</div>
+            </div>
 
-</div>
+            <div class="col-md-6 col-xl-3">
 
-</div>
+                <a
+                    href="{{ url_for('produto.listar') }}"
+                    class="btn btn-outline-success w-100 py-3">
 
-<div class="col-md-3">
+                    Ver produtos
 
-<div class="card shadow-sm">
+                </a>
 
-<div class="card-body">
+            </div>
 
-<h5>
+            <div class="col-md-6 col-xl-3">
 
-Endereçados
+                <a
+                    href="{{ url_for('produto.importar') }}"
+                    class="btn btn-outline-secondary w-100 py-3">
 
-</h5>
+                    Importar CSV
 
-<h2>
+                </a>
 
-0
+            </div>
 
-</h2>
+            <div class="col-md-6 col-xl-3">
 
-</div>
+                <a
+                    href="{{ url_for('etiqueta.pesquisar') }}"
+                    class="btn btn-outline-secondary w-100 py-3">
 
-</div>
+                    Imprimir etiquetas
 
-</div>
+                </a>
 
-<div class="col-md-3">
+            </div>
 
-<div class="card shadow-sm">
+        </div>
 
-<div class="card-body">
-
-<h5>
-
-Sem Endereço
-
-</h5>
-
-<h2>
-
-0
-
-</h2>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="col-md-3">
-
-<div class="card shadow-sm">
-
-<div class="card-body">
-
-<h5>
-
-Posições
-
-</h5>
-
-<h2>
-
-0
-
-</h2>
-
-</div>
-
-</div>
-
-</div>
+    </div>
 
 </div>
 
