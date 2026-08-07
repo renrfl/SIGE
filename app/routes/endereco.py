@@ -1,4 +1,6 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
+
+from sqlalchemy import String, cast, or_
 
 from app import db
 from app.models import Posicao, Produto, ProdutoEndereco
@@ -124,6 +126,81 @@ def substituir_ocupacao_posicao(
     db.session.commit()
 
     return produto_anterior
+
+
+@endereco_bp.route("/buscar-produtos")
+def buscar_produtos():
+
+    termo = request.args.get(
+        "q",
+        ""
+    ).strip()
+
+    if len(termo) < 2:
+
+        return jsonify(
+            []
+        )
+
+    padrao = f"%{termo}%"
+
+    produtos = (
+        Produto.query
+        .filter(
+            Produto.ativo.is_(True),
+            or_(
+                cast(
+                    Produto.codigo,
+                    String
+                ).ilike(padrao),
+                Produto.codigo_barras.ilike(padrao),
+                Produto.descricao.ilike(padrao)
+            )
+        )
+        .order_by(
+            Produto.descricao
+        )
+        .limit(20)
+        .all()
+    )
+
+    resultados = []
+
+    for produto in produtos:
+
+        enderecos = []
+
+        for vinculo in produto.enderecos:
+
+            posicao = vinculo.posicao
+
+            endereco_formatado = (
+                f"{posicao.nivel.modulo.predio.rua.nome}"
+                f" → {posicao.nivel.modulo.predio.nome}"
+                f" → {posicao.nivel.modulo.nome}"
+                f" → {posicao.nivel.nome}"
+                f" → {posicao.nome}"
+            )
+
+            enderecos.append(
+                endereco_formatado
+            )
+
+        resultados.append(
+            {
+                "id": produto.id,
+                "codigo": produto.codigo,
+                "codigo_barras": produto.codigo_barras,
+                "descricao": produto.descricao,
+                "enderecado": len(enderecos) > 0,
+                "total_enderecos": len(enderecos),
+                "enderecos": enderecos
+            }
+        )
+
+    return jsonify(
+        resultados
+    )
 
 
 @endereco_bp.route("/")

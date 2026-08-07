@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Posições{% endblock %}
+{% block title %}
+Posições
+{% endblock %}
 
 {% block content %}
 
@@ -21,95 +23,235 @@
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
+
         {% if messages %}
+
             {% for categoria, mensagem in messages %}
 
-                <div class="alert alert-{{ categoria }}">
+                <div
+                    class="alert alert-{{ categoria }} alert-dismissible fade show"
+                    role="alert">
 
                     {{ mensagem }}
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Fechar">
+                    </button>
 
                 </div>
 
             {% endfor %}
+
         {% endif %}
+
     {% endwith %}
 
-    <table class="table table-bordered table-hover align-middle">
+    <div class="table-responsive">
 
-        <thead class="table-dark">
+        <table class="table table-bordered table-hover align-middle">
 
-            <tr>
+            <thead class="table-dark">
 
-                <th width="80">ID</th>
-                <th>Posição</th>
-                <th>Nível</th>
-                <th>Módulo</th>
-                <th>Prédio</th>
-                <th>Rua</th>
-                <th width="180">Ações</th>
+                <tr>
 
-            </tr>
+                    <th width="80">
+                        ID
+                    </th>
 
-        </thead>
+                    <th>
+                        Posição
+                    </th>
 
-        <tbody>
+                    <th>
+                        Nível
+                    </th>
 
-        {% for posicao in posicoes %}
+                    <th>
+                        Módulo
+                    </th>
 
-            <tr>
+                    <th>
+                        Prédio
+                    </th>
 
-                <td>{{ posicao.id }}</td>
+                    <th>
+                        Rua
+                    </th>
 
-                <td>{{ posicao.nome }}</td>
+                    <th>
+                        Status
+                    </th>
 
-                <td>{{ posicao.nivel.nome }}</td>
+                    <th>
+                        Ocupação
+                    </th>
 
-                <td>{{ posicao.nivel.modulo.nome }}</td>
+                    <th width="300">
+                        Ações
+                    </th>
 
-                <td>{{ posicao.nivel.modulo.predio.nome }}</td>
+                </tr>
 
-                <td>{{ posicao.nivel.modulo.predio.rua.nome }}</td>
+            </thead>
 
-                <td>
+            <tbody>
 
-                    <a
-                        href="{{ url_for('posicao.editar', id=posicao.id) }}"
-                        class="btn btn-warning btn-sm">
+                {% for posicao in posicoes %}
 
-                        Editar
+                    <tr>
 
-                    </a>
+                        <td>
+                            {{ posicao.id }}
+                        </td>
 
-                    <a
-                        href="{{ url_for('posicao.excluir', id=posicao.id) }}"
-                        class="btn btn-danger btn-sm"
-                        onclick="return confirm('Deseja excluir esta posição?')">
+                        <td>
+                            {{ posicao.nome }}
+                        </td>
 
-                        Excluir
+                        <td>
+                            {{ posicao.nivel.nome }}
+                        </td>
 
-                    </a>
+                        <td>
+                            {{ posicao.nivel.modulo.nome }}
+                        </td>
 
-                </td>
+                        <td>
+                            {{ posicao.nivel.modulo.predio.nome }}
+                        </td>
 
-            </tr>
+                        <td>
+                            {{ posicao.nivel.modulo.predio.rua.nome }}
+                        </td>
 
-        {% else %}
+                        <td>
 
-            <tr>
+                            {% if posicao.ativo %}
 
-                <td colspan="7" class="text-center">
+                                <span class="badge text-bg-success">
+                                    Ativa
+                                </span>
 
-                    Nenhuma posição cadastrada.
+                            {% else %}
 
-                </td>
+                                <span class="badge text-bg-secondary">
+                                    Inativa
+                                </span>
 
-            </tr>
+                            {% endif %}
 
-        {% endfor %}
+                        </td>
 
-        </tbody>
+                        <td>
 
-    </table>
+                            {% if posicao.ocupada %}
+
+                                <span class="badge text-bg-warning">
+                                    Ocupada
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge text-bg-success">
+                                    Livre
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            <div class="d-flex flex-wrap gap-2">
+
+                                <a
+                                    href="{{ url_for('posicao.editar', id=posicao.id) }}"
+                                    class="btn btn-warning btn-sm">
+
+                                    Editar
+
+                                </a>
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for('posicao.alternar_status', id=posicao.id) }}">
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-sm {% if posicao.ativo %}btn-secondary{% else %}btn-success{% endif %}"
+                                        onclick="return confirm('{% if posicao.ativo %}Deseja inativar esta posição?{% else %}Deseja ativar esta posição?{% endif %}')">
+
+                                        {% if posicao.ativo %}
+                                            Inativar
+                                        {% else %}
+                                            Ativar
+                                        {% endif %}
+
+                                    </button>
+
+                                </form>
+
+                                {% if not posicao.ocupada %}
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('posicao.excluir', id=posicao.id) }}">
+
+                                        <button
+                                            type="submit"
+                                            class="btn btn-danger btn-sm"
+                                            onclick="return confirm('Deseja excluir definitivamente esta posição vazia?')">
+
+                                            Excluir
+
+                                        </button>
+
+                                    </form>
+
+                                {% else %}
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-danger btn-sm"
+                                        disabled
+                                        title="Remova ou transfira o endereçamento antes de excluir">
+
+                                        Excluir
+
+                                    </button>
+
+                                {% endif %}
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                {% else %}
+
+                    <tr>
+
+                        <td
+                            colspan="9"
+                            class="text-center">
+
+                            Nenhuma posição cadastrada.
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
 
 </div>
 

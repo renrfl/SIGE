@@ -22,8 +22,8 @@ Novo Endereçamento
 
     <p class="text-muted">
 
-        Selecione um produto ativo e uma posição.
-        O status de cada opção aparece diretamente na lista.
+        Pesquise um produto ativo por código interno, código de barras
+        ou descrição e selecione uma posição.
 
     </p>
 
@@ -119,62 +119,112 @@ Novo Endereçamento
 
     {% endif %}
 
-    <form method="POST">
+    <form
+        method="POST"
+        id="form-endereco">
 
-        <div class="mb-3">
+        <div class="mb-3 position-relative">
 
             <label
-                for="produto_id"
+                for="pesquisa_produto"
                 class="form-label">
 
                 Produto
 
             </label>
 
-            <select
+            <input
+                type="hidden"
                 id="produto_id"
                 name="produto_id"
-                class="form-select"
+                value="{{ produto_id_selecionado or '' }}">
+
+            <input
+                type="text"
+                id="pesquisa_produto"
+                class="form-control"
+                autocomplete="off"
+                placeholder="Digite código, código de barras ou descrição"
+                value="{%- for produto in produtos -%}{%- if produto_id_selecionado == produto.id -%}{{ produto.codigo }} - {{ produto.descricao }}{%- endif -%}{%- endfor -%}"
                 required>
-
-                <option value="">
-                    Selecione um produto
-                </option>
-
-                {% for produto in produtos %}
-
-                    <option
-                        value="{{ produto.id }}"
-                        {% if produto_id_selecionado == produto.id %}
-                            selected
-                        {% elif produto_id_selecionado is none and endereco and endereco.produto_id == produto.id %}
-                            selected
-                        {% endif %}>
-
-                        {{ produto.codigo }}
-                        -
-                        {{ produto.descricao }}
-
-                        {% if produto.enderecado %}
-                            — JÁ ENDEREÇADO
-                            {% if produto.total_enderecos > 1 %}
-                                ({{ produto.total_enderecos }} endereços)
-                            {% endif %}
-                        {% else %}
-                            — LIVRE
-                        {% endif %}
-
-                    </option>
-
-                {% endfor %}
-
-            </select>
 
             <div class="form-text">
 
-                Apenas produtos ativos aparecem nesta lista.
-                Produtos já endereçados continuam disponíveis para permitir
-                futuros endereços adicionais.
+                Digite pelo menos dois caracteres e selecione um produto
+                nos resultados apresentados.
+
+            </div>
+
+            <div
+                id="mensagem-produto"
+                class="small mt-2"
+                aria-live="polite">
+            </div>
+
+            <div
+                id="resultados-produtos"
+                class="list-group mt-2 shadow-sm"
+                style="display: none; max-height: 360px; overflow-y: auto;">
+            </div>
+
+            <div
+                id="produto-selecionado"
+                class="mt-3">
+
+                {% for produto in produtos %}
+
+                    {% if produto_id_selecionado == produto.id %}
+
+                        <div class="card border-success">
+
+                            <div class="card-body py-2">
+
+                                <div class="d-flex justify-content-between align-items-start gap-3">
+
+                                    <div>
+
+                                        <div class="fw-bold">
+
+                                            {{ produto.codigo }}
+                                            -
+                                            {{ produto.descricao }}
+
+                                        </div>
+
+                                        {% if produto.codigo_barras %}
+
+                                            <div class="small text-muted">
+                                                Código de barras:
+                                                {{ produto.codigo_barras }}
+                                            </div>
+
+                                        {% endif %}
+
+                                    </div>
+
+                                    {% if produto.enderecado %}
+
+                                        <span class="badge text-bg-success">
+                                            Já endereçado
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="badge text-bg-secondary">
+                                            Livre
+                                        </span>
+
+                                    {% endif %}
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+                {% endfor %}
 
             </div>
 
@@ -302,5 +352,350 @@ Novo Endereçamento
     </form>
 
 </div>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const formulario = document.getElementById("form-endereco");
+    const campoPesquisa = document.getElementById("pesquisa_produto");
+    const campoProdutoId = document.getElementById("produto_id");
+    const resultados = document.getElementById("resultados-produtos");
+    const mensagem = document.getElementById("mensagem-produto");
+    const produtoSelecionado = document.getElementById("produto-selecionado");
+
+    const urlBusca = "{{ url_for('endereco.buscar_produtos') }}";
+
+    let temporizador = null;
+    let textoSelecionado = campoPesquisa.value.trim();
+
+    function esconderResultados() {
+
+        resultados.innerHTML = "";
+        resultados.style.display = "none";
+
+    }
+
+    function limparSelecao() {
+
+        campoProdutoId.value = "";
+        textoSelecionado = "";
+        produtoSelecionado.innerHTML = "";
+
+    }
+
+    function criarTextoEndereco(enderecos) {
+
+        if (!enderecos || enderecos.length === 0) {
+
+            return "";
+
+        }
+
+        return enderecos.join(" | ");
+
+    }
+
+    function selecionarProduto(produto) {
+
+        campoProdutoId.value = produto.id;
+
+        textoSelecionado =
+            produto.codigo
+            + " - "
+            + produto.descricao;
+
+        campoPesquisa.value = textoSelecionado;
+
+        const classeStatus = produto.enderecado
+            ? "text-bg-success"
+            : "text-bg-secondary";
+
+        const textoStatus = produto.enderecado
+            ? (
+                produto.total_enderecos > 1
+                    ? produto.total_enderecos + " endereços"
+                    : "Já endereçado"
+            )
+            : "Livre";
+
+        let codigoBarras = "";
+
+        if (produto.codigo_barras) {
+
+            codigoBarras =
+                '<div class="small text-muted">'
+                + 'Código de barras: '
+                + produto.codigo_barras
+                + '</div>';
+
+        }
+
+        let enderecos = "";
+
+        if (produto.enderecado) {
+
+            enderecos =
+                '<div class="small text-success mt-1">'
+                + 'Endereço atual: '
+                + criarTextoEndereco(produto.enderecos)
+                + '</div>';
+
+        }
+
+        produtoSelecionado.innerHTML =
+            '<div class="card border-success">'
+            + '<div class="card-body py-2">'
+            + '<div class="d-flex justify-content-between align-items-start gap-3">'
+            + '<div>'
+            + '<div class="fw-bold">'
+            + produto.codigo
+            + ' - '
+            + produto.descricao
+            + '</div>'
+            + codigoBarras
+            + enderecos
+            + '</div>'
+            + '<span class="badge '
+            + classeStatus
+            + '">'
+            + textoStatus
+            + '</span>'
+            + '</div>'
+            + '</div>'
+            + '</div>';
+
+        mensagem.textContent = "";
+        mensagem.className = "small mt-2";
+        esconderResultados();
+
+    }
+
+    function mostrarResultados(produtos) {
+
+        resultados.innerHTML = "";
+
+        if (produtos.length === 0) {
+
+            mensagem.textContent =
+                "Nenhum produto ativo foi encontrado.";
+
+            mensagem.className =
+                "small mt-2 text-danger";
+
+            esconderResultados();
+
+            return;
+
+        }
+
+        mensagem.textContent =
+            produtos.length
+            + " resultado(s) encontrado(s).";
+
+        mensagem.className =
+            "small mt-2 text-muted";
+
+        produtos.forEach(function (produto) {
+
+            const item = document.createElement("button");
+
+            item.type = "button";
+            item.className =
+                "list-group-item list-group-item-action";
+
+            const statusClasse = produto.enderecado
+                ? "text-bg-success"
+                : "text-bg-secondary";
+
+            const statusTexto = produto.enderecado
+                ? (
+                    produto.total_enderecos > 1
+                        ? produto.total_enderecos + " endereços"
+                        : "Já endereçado"
+                )
+                : "Livre";
+
+            let detalheEndereco = "";
+
+            if (produto.enderecado) {
+
+                detalheEndereco =
+                    '<div class="small text-success mt-1">'
+                    + criarTextoEndereco(produto.enderecos)
+                    + '</div>';
+
+            }
+
+            let detalheCodigoBarras = "";
+
+            if (produto.codigo_barras) {
+
+                detalheCodigoBarras =
+                    '<div class="small text-muted">'
+                    + produto.codigo_barras
+                    + '</div>';
+
+            }
+
+            item.innerHTML =
+                '<div class="d-flex justify-content-between align-items-start gap-3">'
+                + '<div class="text-start">'
+                + '<div class="fw-bold">'
+                + produto.codigo
+                + ' - '
+                + produto.descricao
+                + '</div>'
+                + detalheCodigoBarras
+                + detalheEndereco
+                + '</div>'
+                + '<span class="badge '
+                + statusClasse
+                + '">'
+                + statusTexto
+                + '</span>'
+                + '</div>';
+
+            item.addEventListener("click", function () {
+
+                selecionarProduto(produto);
+
+            });
+
+            resultados.appendChild(item);
+
+        });
+
+        resultados.style.display = "block";
+
+    }
+
+    async function pesquisarProdutos(termo) {
+
+        mensagem.textContent = "Pesquisando...";
+        mensagem.className = "small mt-2 text-muted";
+
+        try {
+
+            const resposta = await fetch(
+                urlBusca
+                + "?q="
+                + encodeURIComponent(termo),
+                {
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                }
+            );
+
+            if (!resposta.ok) {
+
+                throw new Error(
+                    "Falha ao pesquisar produtos."
+                );
+
+            }
+
+            const produtos = await resposta.json();
+
+            mostrarResultados(produtos);
+
+        } catch (erro) {
+
+            mensagem.textContent =
+                "Não foi possível pesquisar os produtos.";
+
+            mensagem.className =
+                "small mt-2 text-danger";
+
+            esconderResultados();
+
+        }
+
+    }
+
+    campoPesquisa.addEventListener("input", function () {
+
+        const termo = campoPesquisa.value.trim();
+
+        clearTimeout(temporizador);
+
+        if (termo !== textoSelecionado) {
+
+            limparSelecao();
+
+        }
+
+        if (termo.length < 2) {
+
+            esconderResultados();
+
+            mensagem.textContent =
+                "Digite pelo menos dois caracteres.";
+
+            mensagem.className =
+                "small mt-2 text-muted";
+
+            return;
+
+        }
+
+        temporizador = setTimeout(function () {
+
+            pesquisarProdutos(termo);
+
+        }, 300);
+
+    });
+
+    campoPesquisa.addEventListener("focus", function () {
+
+        const termo = campoPesquisa.value.trim();
+
+        if (
+            termo.length >= 2
+            && campoProdutoId.value === ""
+        ) {
+
+            pesquisarProdutos(termo);
+
+        }
+
+    });
+
+    formulario.addEventListener("submit", function (evento) {
+
+        if (!campoProdutoId.value) {
+
+            evento.preventDefault();
+
+            mensagem.textContent =
+                "Selecione um produto na lista de resultados.";
+
+            mensagem.className =
+                "small mt-2 text-danger";
+
+            campoPesquisa.focus();
+
+        }
+
+    });
+
+    document.addEventListener("click", function (evento) {
+
+        if (
+            !resultados.contains(evento.target)
+            && evento.target !== campoPesquisa
+        ) {
+
+            esconderResultados();
+
+        }
+
+    });
+
+});
+
+</script>
 
 {% endblock %}

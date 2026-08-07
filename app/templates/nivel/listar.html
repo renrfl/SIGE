@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Níveis{% endblock %}
+{% block title %}
+Níveis
+{% endblock %}
 
 {% block content %}
 
@@ -21,92 +23,174 @@
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
+
         {% if messages %}
+
             {% for categoria, mensagem in messages %}
 
-                <div class="alert alert-{{ categoria }}">
+                <div
+                    class="alert alert-{{ categoria }} alert-dismissible fade show"
+                    role="alert">
 
                     {{ mensagem }}
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Fechar">
+                    </button>
 
                 </div>
 
             {% endfor %}
+
         {% endif %}
+
     {% endwith %}
 
-    <table class="table table-bordered table-hover align-middle">
+    <div class="table-responsive">
 
-        <thead class="table-dark">
+        <table class="table table-bordered table-hover align-middle">
 
-            <tr>
+            <thead class="table-dark">
 
-                <th width="80">ID</th>
-                <th>Nível</th>
-                <th>Módulo</th>
-                <th>Prédio</th>
-                <th>Rua</th>
-                <th width="180">Ações</th>
+                <tr>
 
-            </tr>
+                    <th width="80">
+                        ID
+                    </th>
 
-        </thead>
+                    <th>
+                        Nível
+                    </th>
 
-        <tbody>
+                    <th>
+                        Módulo
+                    </th>
 
-        {% for nivel in niveis %}
+                    <th>
+                        Prédio
+                    </th>
 
-            <tr>
+                    <th>
+                        Rua
+                    </th>
 
-                <td>{{ nivel.id }}</td>
+                    <th>
+                        Status
+                    </th>
 
-                <td>{{ nivel.nome }}</td>
+                    <th width="220">
+                        Ações
+                    </th>
 
-                <td>{{ nivel.modulo.nome }}</td>
+                </tr>
 
-                <td>{{ nivel.modulo.predio.nome }}</td>
+            </thead>
 
-                <td>{{ nivel.modulo.predio.rua.nome }}</td>
+            <tbody>
 
-                <td>
+                {% for nivel in niveis %}
 
-                    <a
-                        href="{{ url_for('nivel.editar', id=nivel.id) }}"
-                        class="btn btn-warning btn-sm">
+                    <tr>
 
-                        Editar
+                        <td>
+                            {{ nivel.id }}
+                        </td>
 
-                    </a>
+                        <td>
+                            {{ nivel.nome }}
+                        </td>
 
-                    <a
-                        href="{{ url_for('nivel.excluir', id=nivel.id) }}"
-                        class="btn btn-danger btn-sm"
-                        onclick="return confirm('Deseja excluir este nível?')">
+                        <td>
+                            {{ nivel.modulo.nome }}
+                        </td>
 
-                        Excluir
+                        <td>
+                            {{ nivel.modulo.predio.nome }}
+                        </td>
 
-                    </a>
+                        <td>
+                            {{ nivel.modulo.predio.rua.nome }}
+                        </td>
 
-                </td>
+                        <td>
 
-            </tr>
+                            {% if nivel.ativo %}
 
-        {% else %}
+                                <span class="badge text-bg-success">
+                                    Ativo
+                                </span>
 
-            <tr>
+                            {% else %}
 
-                <td colspan="6" class="text-center">
+                                <span class="badge text-bg-secondary">
+                                    Inativo
+                                </span>
 
-                    Nenhum nível cadastrado.
+                            {% endif %}
 
-                </td>
+                        </td>
 
-            </tr>
+                        <td>
 
-        {% endfor %}
+                            <div class="d-flex flex-wrap gap-2">
 
-        </tbody>
+                                <a
+                                    href="{{ url_for('nivel.editar', id=nivel.id) }}"
+                                    class="btn btn-warning btn-sm">
 
-    </table>
+                                    Editar
+
+                                </a>
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for('nivel.alternar_status', id=nivel.id) }}">
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-sm {% if nivel.ativo %}btn-secondary{% else %}btn-success{% endif %}"
+                                        onclick="return confirm('{% if nivel.ativo %}Deseja inativar este nível e suas posições?{% else %}Deseja ativar este nível e suas posições?{% endif %}')">
+
+                                        {% if nivel.ativo %}
+                                            Inativar
+                                        {% else %}
+                                            Ativar
+                                        {% endif %}
+
+                                    </button>
+
+                                </form>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                {% else %}
+
+                    <tr>
+
+                        <td
+                            colspan="7"
+                            class="text-center">
+
+                            Nenhum nível cadastrado.
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
 
 </div>
 

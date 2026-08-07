@@ -14,7 +14,9 @@ modulo_bp = Blueprint(
 @modulo_bp.route("/")
 def listar():
 
-    modulos = Modulo.query.order_by(Modulo.nome).all()
+    modulos = Modulo.query.order_by(
+        Modulo.nome
+    ).all()
 
     return render_template(
         "modulo/listar.html",
@@ -25,19 +27,65 @@ def listar():
 @modulo_bp.route("/novo", methods=["GET", "POST"])
 def novo():
 
-    predios = Predio.query.order_by(Predio.nome).all()
+    predios = Predio.query.filter_by(
+        ativo=True
+    ).order_by(
+        Predio.nome
+    ).all()
 
     if request.method == "POST":
 
-        nome = request.form["nome"].strip()
-        predio_id = request.form["predio_id"]
+        nome = request.form[
+            "nome"
+        ].strip()
+
+        predio_id = request.form.get(
+            "predio_id",
+            type=int
+        )
 
         if not nome:
 
-            flash("Informe o nome do módulo.", "danger")
+            flash(
+                "Informe o nome do módulo.",
+                "danger"
+            )
 
             return redirect(
-                url_for("modulo.novo")
+                url_for(
+                    "modulo.novo"
+                )
+            )
+
+        if not predio_id:
+
+            flash(
+                "Selecione o prédio do módulo.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "modulo.novo"
+                )
+            )
+
+        predio = Predio.query.filter_by(
+            id=predio_id,
+            ativo=True
+        ).first()
+
+        if not predio:
+
+            flash(
+                "O prédio selecionado não está disponível.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "modulo.novo"
+                )
             )
 
         modulo_existente = Modulo.query.filter_by(
@@ -53,15 +101,21 @@ def novo():
             )
 
             return redirect(
-                url_for("modulo.novo")
+                url_for(
+                    "modulo.novo"
+                )
             )
 
         modulo = Modulo(
             nome=nome,
-            predio_id=predio_id
+            predio_id=predio_id,
+            ativo=True
         )
 
-        db.session.add(modulo)
+        db.session.add(
+            modulo
+        )
+
         db.session.commit()
 
         flash(
@@ -70,7 +124,9 @@ def novo():
         )
 
         return redirect(
-            url_for("modulo.listar")
+            url_for(
+                "modulo.listar"
+            )
         )
 
     return render_template(
@@ -80,22 +136,99 @@ def novo():
     )
 
 
-@modulo_bp.route("/editar/<int:id>", methods=["GET", "POST"])
+@modulo_bp.route(
+    "/editar/<int:id>",
+    methods=["GET", "POST"]
+)
 def editar(id):
 
-    modulo = Modulo.query.get_or_404(id)
+    modulo = Modulo.query.get_or_404(
+        id
+    )
 
-    predios = Predio.query.order_by(Predio.nome).all()
+    predios = Predio.query.filter_by(
+        ativo=True
+    ).order_by(
+        Predio.nome
+    ).all()
+
+    if (
+        modulo.predio
+        and modulo.predio not in predios
+    ):
+
+        predios.append(
+            modulo.predio
+        )
+
+        predios.sort(
+            key=lambda predio: predio.nome.lower()
+        )
 
     if request.method == "POST":
 
-        nome = request.form["nome"].strip()
-        predio_id = request.form["predio_id"]
+        nome = request.form[
+            "nome"
+        ].strip()
+
+        predio_id = request.form.get(
+            "predio_id",
+            type=int
+        )
 
         if not nome:
 
             flash(
                 "Informe o nome do módulo.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "modulo.editar",
+                    id=modulo.id
+                )
+            )
+
+        if not predio_id:
+
+            flash(
+                "Selecione o prédio do módulo.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "modulo.editar",
+                    id=modulo.id
+                )
+            )
+
+        predio = Predio.query.get(
+            predio_id
+        )
+
+        if not predio:
+
+            flash(
+                "O prédio selecionado não foi encontrado.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "modulo.editar",
+                    id=modulo.id
+                )
+            )
+
+        if (
+            not predio.ativo
+            and predio.id != modulo.predio_id
+        ):
+
+            flash(
+                "Não é permitido mover o módulo para um prédio inativo.",
                 "danger"
             )
 
@@ -137,7 +270,9 @@ def editar(id):
         )
 
         return redirect(
-            url_for("modulo.listar")
+            url_for(
+                "modulo.listar"
+            )
         )
 
     return render_template(
@@ -147,19 +282,60 @@ def editar(id):
     )
 
 
-@modulo_bp.route("/excluir/<int:id>")
-def excluir(id):
+@modulo_bp.route(
+    "/alternar-status/<int:id>",
+    methods=["POST"]
+)
+def alternar_status(id):
 
-    modulo = Modulo.query.get_or_404(id)
-
-    db.session.delete(modulo)
-    db.session.commit()
-
-    flash(
-        "Módulo removido com sucesso.",
-        "success"
+    modulo = Modulo.query.get_or_404(
+        id
     )
 
+    novo_status = not modulo.ativo
+
+    modulo.ativo = novo_status
+
+    quantidade_niveis = 0
+    quantidade_posicoes = 0
+
+    for nivel in modulo.niveis:
+
+        nivel.ativo = novo_status
+        quantidade_niveis += 1
+
+        for posicao in nivel.posicoes:
+
+            posicao.ativo = novo_status
+            quantidade_posicoes += 1
+
+    db.session.commit()
+
+    if novo_status:
+
+        flash(
+            (
+                "Módulo ativado com sucesso. "
+                f"Também foram ativados {quantidade_niveis} nível(is) "
+                f"e {quantidade_posicoes} posição(ões)."
+            ),
+            "success"
+        )
+
+    else:
+
+        flash(
+            (
+                "Módulo inativado com sucesso. "
+                f"Também foram inativados {quantidade_niveis} nível(is) "
+                f"e {quantidade_posicoes} posição(ões). "
+                "Os endereçamentos existentes foram preservados."
+            ),
+            "success"
+        )
+
     return redirect(
-        url_for("modulo.listar")
+        url_for(
+            "modulo.listar"
+        )
     )

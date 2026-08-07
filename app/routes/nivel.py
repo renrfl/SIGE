@@ -14,7 +14,9 @@ nivel_bp = Blueprint(
 @nivel_bp.route("/")
 def listar():
 
-    niveis = Nivel.query.order_by(Nivel.nome).all()
+    niveis = Nivel.query.order_by(
+        Nivel.nome
+    ).all()
 
     return render_template(
         "nivel/listar.html",
@@ -25,12 +27,22 @@ def listar():
 @nivel_bp.route("/novo", methods=["GET", "POST"])
 def novo():
 
-    modulos = Modulo.query.order_by(Modulo.nome).all()
+    modulos = Modulo.query.filter_by(
+        ativo=True
+    ).order_by(
+        Modulo.nome
+    ).all()
 
     if request.method == "POST":
 
-        nome = request.form["nome"].strip()
-        modulo_id = request.form["modulo_id"]
+        nome = request.form[
+            "nome"
+        ].strip()
+
+        modulo_id = request.form.get(
+            "modulo_id",
+            type=int
+        )
 
         if not nome:
 
@@ -40,7 +52,40 @@ def novo():
             )
 
             return redirect(
-                url_for("nivel.novo")
+                url_for(
+                    "nivel.novo"
+                )
+            )
+
+        if not modulo_id:
+
+            flash(
+                "Selecione o módulo do nível.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "nivel.novo"
+                )
+            )
+
+        modulo = Modulo.query.filter_by(
+            id=modulo_id,
+            ativo=True
+        ).first()
+
+        if not modulo:
+
+            flash(
+                "O módulo selecionado não está disponível.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "nivel.novo"
+                )
             )
 
         nivel_existente = Nivel.query.filter_by(
@@ -56,15 +101,21 @@ def novo():
             )
 
             return redirect(
-                url_for("nivel.novo")
+                url_for(
+                    "nivel.novo"
+                )
             )
 
         nivel = Nivel(
             nome=nome,
-            modulo_id=modulo_id
+            modulo_id=modulo_id,
+            ativo=True
         )
 
-        db.session.add(nivel)
+        db.session.add(
+            nivel
+        )
+
         db.session.commit()
 
         flash(
@@ -73,7 +124,9 @@ def novo():
         )
 
         return redirect(
-            url_for("nivel.listar")
+            url_for(
+                "nivel.listar"
+            )
         )
 
     return render_template(
@@ -83,22 +136,99 @@ def novo():
     )
 
 
-@nivel_bp.route("/editar/<int:id>", methods=["GET", "POST"])
+@nivel_bp.route(
+    "/editar/<int:id>",
+    methods=["GET", "POST"]
+)
 def editar(id):
 
-    nivel = Nivel.query.get_or_404(id)
+    nivel = Nivel.query.get_or_404(
+        id
+    )
 
-    modulos = Modulo.query.order_by(Modulo.nome).all()
+    modulos = Modulo.query.filter_by(
+        ativo=True
+    ).order_by(
+        Modulo.nome
+    ).all()
+
+    if (
+        nivel.modulo
+        and nivel.modulo not in modulos
+    ):
+
+        modulos.append(
+            nivel.modulo
+        )
+
+        modulos.sort(
+            key=lambda modulo: modulo.nome.lower()
+        )
 
     if request.method == "POST":
 
-        nome = request.form["nome"].strip()
-        modulo_id = request.form["modulo_id"]
+        nome = request.form[
+            "nome"
+        ].strip()
+
+        modulo_id = request.form.get(
+            "modulo_id",
+            type=int
+        )
 
         if not nome:
 
             flash(
                 "Informe o nome do nível.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "nivel.editar",
+                    id=nivel.id
+                )
+            )
+
+        if not modulo_id:
+
+            flash(
+                "Selecione o módulo do nível.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "nivel.editar",
+                    id=nivel.id
+                )
+            )
+
+        modulo = Modulo.query.get(
+            modulo_id
+        )
+
+        if not modulo:
+
+            flash(
+                "O módulo selecionado não foi encontrado.",
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "nivel.editar",
+                    id=nivel.id
+                )
+            )
+
+        if (
+            not modulo.ativo
+            and modulo.id != nivel.modulo_id
+        ):
+
+            flash(
+                "Não é permitido mover o nível para um módulo inativo.",
                 "danger"
             )
 
@@ -140,7 +270,9 @@ def editar(id):
         )
 
         return redirect(
-            url_for("nivel.listar")
+            url_for(
+                "nivel.listar"
+            )
         )
 
     return render_template(
@@ -150,19 +282,49 @@ def editar(id):
     )
 
 
-@nivel_bp.route("/excluir/<int:id>")
-def excluir(id):
+@nivel_bp.route(
+    "/alternar-status/<int:id>",
+    methods=["POST"]
+)
+def alternar_status(id):
 
-    nivel = Nivel.query.get_or_404(id)
-
-    db.session.delete(nivel)
-    db.session.commit()
-
-    flash(
-        "Nível removido com sucesso.",
-        "success"
+    nivel = Nivel.query.get_or_404(
+        id
     )
 
+    novo_status = not nivel.ativo
+
+    nivel.ativo = novo_status
+
+    for posicao in nivel.posicoes:
+
+        posicao.ativo = novo_status
+
+    db.session.commit()
+
+    if novo_status:
+
+        flash(
+            (
+                "Nível ativado com sucesso. "
+                "As posições vinculadas também foram ativadas."
+            ),
+            "success"
+        )
+
+    else:
+
+        flash(
+            (
+                "Nível inativado com sucesso. "
+                "As posições vinculadas não aparecerão em novos "
+                "endereçamentos."
+            ),
+            "success"
+        )
+
     return redirect(
-        url_for("nivel.listar")
+        url_for(
+            "nivel.listar"
+        )
     )
