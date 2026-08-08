@@ -22,8 +22,9 @@ Novo Endereçamento
 
     <p class="text-muted">
 
-        Pesquise um produto ativo por código interno, código de barras
-        ou descrição e selecione uma posição.
+        Pesquise um produto ativo e uma posição ativa.
+        O SIGE informa quando o produto já possui endereço
+        e quando a posição já está ocupada.
 
     </p>
 
@@ -230,65 +231,115 @@ Novo Endereçamento
 
         </div>
 
-        <div class="mb-3">
+        <div class="mb-3 position-relative">
 
             <label
-                for="posicao_id"
+                for="pesquisa_posicao"
                 class="form-label">
 
                 Posição
 
             </label>
 
-            <select
+            <input
+                type="hidden"
                 id="posicao_id"
                 name="posicao_id"
-                class="form-select"
+                value="{{ posicao_id_selecionada or '' }}">
+
+            <input
+                type="text"
+                id="pesquisa_posicao"
+                class="form-control"
+                autocomplete="off"
+                placeholder="Ex.: RUA 1 PREDIO 2 MODULO 1, AVARIA ou DEPOSITO"
+                value="{%- for posicao in posicoes -%}{%- if posicao_id_selecionada == posicao.id -%}{{ posicao.nivel.modulo.predio.rua.nome }} → {{ posicao.nivel.modulo.predio.nome }} → {{ posicao.nivel.modulo.nome }} → {{ posicao.nivel.nome }} → {{ posicao.nome }}{%- endif -%}{%- endfor -%}"
                 required>
-
-                <option value="">
-                    Selecione uma posição
-                </option>
-
-                {% for posicao in posicoes %}
-
-                    <option
-                        value="{{ posicao.id }}"
-                        {% if posicao_id_selecionada == posicao.id %}
-                            selected
-                        {% elif posicao_id_selecionada is none and endereco and endereco.posicao_id == posicao.id %}
-                            selected
-                        {% endif %}>
-
-                        {{ posicao.nivel.modulo.predio.rua.nome }}
-                        →
-                        {{ posicao.nivel.modulo.predio.nome }}
-                        →
-                        {{ posicao.nivel.modulo.nome }}
-                        →
-                        {{ posicao.nivel.nome }}
-                        →
-                        {{ posicao.nome }}
-
-                        {% if posicao.ocupada and posicao.produto_ocupante %}
-                            — OCUPADA:
-                            {{ posicao.produto_ocupante.codigo }}
-                            -
-                            {{ posicao.produto_ocupante.descricao }}
-                        {% else %}
-                            — LIVRE
-                        {% endif %}
-
-                    </option>
-
-                {% endfor %}
-
-            </select>
 
             <div class="form-text">
 
-                Posições ocupadas continuam selecionáveis para permitir troca,
-                mas o SIGE exigirá confirmação antes de substituir o produto atual.
+                Digite pelo menos dois caracteres.
+                Você pode pesquisar por Rua, Prédio, Módulo, Nível,
+                Posição, AVARIA ou DEPOSITO.
+
+            </div>
+
+            <div
+                id="mensagem-posicao"
+                class="small mt-2"
+                aria-live="polite">
+            </div>
+
+            <div
+                id="resultados-posicoes"
+                class="list-group mt-2 shadow-sm"
+                style="display: none; max-height: 360px; overflow-y: auto;">
+            </div>
+
+            <div
+                id="posicao-selecionada"
+                class="mt-3">
+
+                {% for posicao in posicoes %}
+
+                    {% if posicao_id_selecionada == posicao.id %}
+
+                        <div class="card {% if posicao.ocupada %}border-warning{% else %}border-success{% endif %}">
+
+                            <div class="card-body py-2">
+
+                                <div class="d-flex justify-content-between align-items-start gap-3">
+
+                                    <div class="fw-bold">
+
+                                        {{ posicao.nivel.modulo.predio.rua.nome }}
+                                        →
+                                        {{ posicao.nivel.modulo.predio.nome }}
+                                        →
+                                        {{ posicao.nivel.modulo.nome }}
+                                        →
+                                        {{ posicao.nivel.nome }}
+                                        →
+                                        {{ posicao.nome }}
+
+                                        {% if posicao.ocupada and posicao.produto_ocupante %}
+
+                                            <div class="small text-warning-emphasis mt-1">
+
+                                                Produto:
+                                                {{ posicao.produto_ocupante.codigo }}
+                                                -
+                                                {{ posicao.produto_ocupante.descricao }}
+
+                                            </div>
+
+                                        {% endif %}
+
+                                    </div>
+
+                                    {% if posicao.ocupada %}
+
+                                        <span class="badge text-bg-warning">
+                                            Ocupada
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="badge text-bg-success">
+                                            Livre
+                                        </span>
+
+                                    {% endif %}
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+                {% endfor %}
 
             </div>
 
@@ -358,29 +409,65 @@ Novo Endereçamento
 document.addEventListener("DOMContentLoaded", function () {
 
     const formulario = document.getElementById("form-endereco");
-    const campoPesquisa = document.getElementById("pesquisa_produto");
+
+    const campoPesquisaProduto = document.getElementById("pesquisa_produto");
     const campoProdutoId = document.getElementById("produto_id");
-    const resultados = document.getElementById("resultados-produtos");
-    const mensagem = document.getElementById("mensagem-produto");
+    const resultadosProdutos = document.getElementById("resultados-produtos");
+    const mensagemProduto = document.getElementById("mensagem-produto");
     const produtoSelecionado = document.getElementById("produto-selecionado");
 
-    const urlBusca = "{{ url_for('endereco.buscar_produtos') }}";
+    const campoPesquisaPosicao = document.getElementById("pesquisa_posicao");
+    const campoPosicaoId = document.getElementById("posicao_id");
+    const resultadosPosicoes = document.getElementById("resultados-posicoes");
+    const mensagemPosicao = document.getElementById("mensagem-posicao");
+    const posicaoSelecionada = document.getElementById("posicao-selecionada");
 
-    let temporizador = null;
-    let textoSelecionado = campoPesquisa.value.trim();
+    const urlBuscaProdutos = "{{ url_for('endereco.buscar_produtos') }}";
+    const urlBuscaPosicoes = "{{ url_for('endereco.buscar_posicoes') }}";
 
-    function esconderResultados() {
+    let temporizadorProduto = null;
+    let temporizadorPosicao = null;
 
-        resultados.innerHTML = "";
-        resultados.style.display = "none";
+    let textoProdutoSelecionado = campoPesquisaProduto.value.trim();
+    let textoPosicaoSelecionada = campoPesquisaPosicao.value.trim();
+
+    function escaparHtml(texto) {
+
+        const elemento = document.createElement("div");
+
+        elemento.textContent = texto ?? "";
+
+        return elemento.innerHTML;
 
     }
 
-    function limparSelecao() {
+    function esconderResultadosProdutos() {
+
+        resultadosProdutos.innerHTML = "";
+        resultadosProdutos.style.display = "none";
+
+    }
+
+    function esconderResultadosPosicoes() {
+
+        resultadosPosicoes.innerHTML = "";
+        resultadosPosicoes.style.display = "none";
+
+    }
+
+    function limparSelecaoProduto() {
 
         campoProdutoId.value = "";
-        textoSelecionado = "";
+        textoProdutoSelecionado = "";
         produtoSelecionado.innerHTML = "";
+
+    }
+
+    function limparSelecaoPosicao() {
+
+        campoPosicaoId.value = "";
+        textoPosicaoSelecionada = "";
+        posicaoSelecionada.innerHTML = "";
 
     }
 
@@ -400,12 +487,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
         campoProdutoId.value = produto.id;
 
-        textoSelecionado =
+        textoProdutoSelecionado =
             produto.codigo
             + " - "
             + produto.descricao;
 
-        campoPesquisa.value = textoSelecionado;
+        campoPesquisaProduto.value = textoProdutoSelecionado;
 
         const classeStatus = produto.enderecado
             ? "text-bg-success"
@@ -426,7 +513,7 @@ document.addEventListener("DOMContentLoaded", function () {
             codigoBarras =
                 '<div class="small text-muted">'
                 + 'Código de barras: '
-                + produto.codigo_barras
+                + escaparHtml(produto.codigo_barras)
                 + '</div>';
 
         }
@@ -438,7 +525,9 @@ document.addEventListener("DOMContentLoaded", function () {
             enderecos =
                 '<div class="small text-success mt-1">'
                 + 'Endereço atual: '
-                + criarTextoEndereco(produto.enderecos)
+                + escaparHtml(
+                    criarTextoEndereco(produto.enderecos)
+                )
                 + '</div>';
 
         }
@@ -449,9 +538,9 @@ document.addEventListener("DOMContentLoaded", function () {
             + '<div class="d-flex justify-content-between align-items-start gap-3">'
             + '<div>'
             + '<div class="fw-bold">'
-            + produto.codigo
+            + escaparHtml(produto.codigo)
             + ' - '
-            + produto.descricao
+            + escaparHtml(produto.descricao)
             + '</div>'
             + codigoBarras
             + enderecos
@@ -465,35 +554,99 @@ document.addEventListener("DOMContentLoaded", function () {
             + '</div>'
             + '</div>';
 
-        mensagem.textContent = "";
-        mensagem.className = "small mt-2";
-        esconderResultados();
+        mensagemProduto.textContent = "";
+        mensagemProduto.className = "small mt-2";
+
+        esconderResultadosProdutos();
 
     }
 
-    function mostrarResultados(produtos) {
+    function selecionarPosicao(posicao) {
 
-        resultados.innerHTML = "";
+        campoPosicaoId.value = posicao.id;
+
+        textoPosicaoSelecionada = posicao.endereco;
+
+        campoPesquisaPosicao.value = textoPosicaoSelecionada;
+
+        const classeBorda = posicao.ocupada
+            ? "border-warning"
+            : "border-success";
+
+        const classeStatus = posicao.ocupada
+            ? "text-bg-warning"
+            : "text-bg-success";
+
+        const textoStatus = posicao.ocupada
+            ? "Ocupada"
+            : "Livre";
+
+        let produtoOcupante = "";
+
+        if (
+            posicao.ocupada
+            && posicao.produto
+        ) {
+
+            produtoOcupante =
+                '<div class="small text-warning-emphasis mt-1">'
+                + 'Produto: '
+                + escaparHtml(posicao.produto.codigo)
+                + ' - '
+                + escaparHtml(posicao.produto.descricao)
+                + '</div>';
+
+        }
+
+        posicaoSelecionada.innerHTML =
+            '<div class="card '
+            + classeBorda
+            + '">'
+            + '<div class="card-body py-2">'
+            + '<div class="d-flex justify-content-between align-items-start gap-3">'
+            + '<div class="fw-bold">'
+            + escaparHtml(posicao.endereco)
+            + produtoOcupante
+            + '</div>'
+            + '<span class="badge '
+            + classeStatus
+            + '">'
+            + textoStatus
+            + '</span>'
+            + '</div>'
+            + '</div>'
+            + '</div>';
+
+        mensagemPosicao.textContent = "";
+        mensagemPosicao.className = "small mt-2";
+
+        esconderResultadosPosicoes();
+
+    }
+
+    function mostrarResultadosProdutos(produtos) {
+
+        resultadosProdutos.innerHTML = "";
 
         if (produtos.length === 0) {
 
-            mensagem.textContent =
+            mensagemProduto.textContent =
                 "Nenhum produto ativo foi encontrado.";
 
-            mensagem.className =
+            mensagemProduto.className =
                 "small mt-2 text-danger";
 
-            esconderResultados();
+            esconderResultadosProdutos();
 
             return;
 
         }
 
-        mensagem.textContent =
+        mensagemProduto.textContent =
             produtos.length
             + " resultado(s) encontrado(s).";
 
-        mensagem.className =
+        mensagemProduto.className =
             "small mt-2 text-muted";
 
         produtos.forEach(function (produto) {
@@ -501,6 +654,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const item = document.createElement("button");
 
             item.type = "button";
+
             item.className =
                 "list-group-item list-group-item-action";
 
@@ -522,7 +676,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 detalheEndereco =
                     '<div class="small text-success mt-1">'
-                    + criarTextoEndereco(produto.enderecos)
+                    + escaparHtml(
+                        criarTextoEndereco(produto.enderecos)
+                    )
                     + '</div>';
 
             }
@@ -533,7 +689,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 detalheCodigoBarras =
                     '<div class="small text-muted">'
-                    + produto.codigo_barras
+                    + escaparHtml(produto.codigo_barras)
                     + '</div>';
 
             }
@@ -542,9 +698,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 '<div class="d-flex justify-content-between align-items-start gap-3">'
                 + '<div class="text-start">'
                 + '<div class="fw-bold">'
-                + produto.codigo
+                + escaparHtml(produto.codigo)
                 + ' - '
-                + produto.descricao
+                + escaparHtml(produto.descricao)
                 + '</div>'
                 + detalheCodigoBarras
                 + detalheEndereco
@@ -562,23 +718,110 @@ document.addEventListener("DOMContentLoaded", function () {
 
             });
 
-            resultados.appendChild(item);
+            resultadosProdutos.appendChild(item);
 
         });
 
-        resultados.style.display = "block";
+        resultadosProdutos.style.display = "block";
+
+    }
+
+    function mostrarResultadosPosicoes(posicoes) {
+
+        resultadosPosicoes.innerHTML = "";
+
+        if (posicoes.length === 0) {
+
+            mensagemPosicao.textContent =
+                "Nenhuma posição ativa foi encontrada.";
+
+            mensagemPosicao.className =
+                "small mt-2 text-danger";
+
+            esconderResultadosPosicoes();
+
+            return;
+
+        }
+
+        mensagemPosicao.textContent =
+            posicoes.length
+            + " resultado(s) encontrado(s).";
+
+        mensagemPosicao.className =
+            "small mt-2 text-muted";
+
+        posicoes.forEach(function (posicao) {
+
+            const item = document.createElement("button");
+
+            item.type = "button";
+
+            item.className =
+                "list-group-item list-group-item-action";
+
+            const statusClasse = posicao.ocupada
+                ? "text-bg-warning"
+                : "text-bg-success";
+
+            const statusTexto = posicao.ocupada
+                ? "Ocupada"
+                : "Livre";
+
+            let produtoOcupante = "";
+
+            if (
+                posicao.ocupada
+                && posicao.produto
+            ) {
+
+                produtoOcupante =
+                    '<div class="small text-warning-emphasis mt-1">'
+                    + escaparHtml(posicao.produto.codigo)
+                    + ' - '
+                    + escaparHtml(posicao.produto.descricao)
+                    + '</div>';
+
+            }
+
+            item.innerHTML =
+                '<div class="d-flex justify-content-between align-items-start gap-3">'
+                + '<div class="text-start">'
+                + '<div class="fw-bold">'
+                + escaparHtml(posicao.endereco)
+                + '</div>'
+                + produtoOcupante
+                + '</div>'
+                + '<span class="badge '
+                + statusClasse
+                + '">'
+                + statusTexto
+                + '</span>'
+                + '</div>';
+
+            item.addEventListener("click", function () {
+
+                selecionarPosicao(posicao);
+
+            });
+
+            resultadosPosicoes.appendChild(item);
+
+        });
+
+        resultadosPosicoes.style.display = "block";
 
     }
 
     async function pesquisarProdutos(termo) {
 
-        mensagem.textContent = "Pesquisando...";
-        mensagem.className = "small mt-2 text-muted";
+        mensagemProduto.textContent = "Pesquisando...";
+        mensagemProduto.className = "small mt-2 text-muted";
 
         try {
 
             const resposta = await fetch(
-                urlBusca
+                urlBuscaProdutos
                 + "?q="
                 + encodeURIComponent(termo),
                 {
@@ -598,49 +841,93 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const produtos = await resposta.json();
 
-            mostrarResultados(produtos);
+            mostrarResultadosProdutos(produtos);
 
         } catch (erro) {
 
-            mensagem.textContent =
+            mensagemProduto.textContent =
                 "Não foi possível pesquisar os produtos.";
 
-            mensagem.className =
+            mensagemProduto.className =
                 "small mt-2 text-danger";
 
-            esconderResultados();
+            esconderResultadosProdutos();
 
         }
 
     }
 
-    campoPesquisa.addEventListener("input", function () {
+    async function pesquisarPosicoes(termo) {
 
-        const termo = campoPesquisa.value.trim();
+        mensagemPosicao.textContent = "Pesquisando...";
+        mensagemPosicao.className = "small mt-2 text-muted";
 
-        clearTimeout(temporizador);
+        try {
 
-        if (termo !== textoSelecionado) {
+            const resposta = await fetch(
+                urlBuscaPosicoes
+                + "?q="
+                + encodeURIComponent(termo),
+                {
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                }
+            );
 
-            limparSelecao();
+            if (!resposta.ok) {
+
+                throw new Error(
+                    "Falha ao pesquisar posições."
+                );
+
+            }
+
+            const posicoes = await resposta.json();
+
+            mostrarResultadosPosicoes(posicoes);
+
+        } catch (erro) {
+
+            mensagemPosicao.textContent =
+                "Não foi possível pesquisar as posições.";
+
+            mensagemPosicao.className =
+                "small mt-2 text-danger";
+
+            esconderResultadosPosicoes();
+
+        }
+
+    }
+
+    campoPesquisaProduto.addEventListener("input", function () {
+
+        const termo = campoPesquisaProduto.value.trim();
+
+        clearTimeout(temporizadorProduto);
+
+        if (termo !== textoProdutoSelecionado) {
+
+            limparSelecaoProduto();
 
         }
 
         if (termo.length < 2) {
 
-            esconderResultados();
+            esconderResultadosProdutos();
 
-            mensagem.textContent =
+            mensagemProduto.textContent =
                 "Digite pelo menos dois caracteres.";
 
-            mensagem.className =
+            mensagemProduto.className =
                 "small mt-2 text-muted";
 
             return;
 
         }
 
-        temporizador = setTimeout(function () {
+        temporizadorProduto = setTimeout(function () {
 
             pesquisarProdutos(termo);
 
@@ -648,9 +935,43 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
-    campoPesquisa.addEventListener("focus", function () {
+    campoPesquisaPosicao.addEventListener("input", function () {
 
-        const termo = campoPesquisa.value.trim();
+        const termo = campoPesquisaPosicao.value.trim();
+
+        clearTimeout(temporizadorPosicao);
+
+        if (termo !== textoPosicaoSelecionada) {
+
+            limparSelecaoPosicao();
+
+        }
+
+        if (termo.length < 2) {
+
+            esconderResultadosPosicoes();
+
+            mensagemPosicao.textContent =
+                "Digite pelo menos dois caracteres.";
+
+            mensagemPosicao.className =
+                "small mt-2 text-muted";
+
+            return;
+
+        }
+
+        temporizadorPosicao = setTimeout(function () {
+
+            pesquisarPosicoes(termo);
+
+        }, 300);
+
+    });
+
+    campoPesquisaProduto.addEventListener("focus", function () {
+
+        const termo = campoPesquisaProduto.value.trim();
 
         if (
             termo.length >= 2
@@ -663,19 +984,50 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
+    campoPesquisaPosicao.addEventListener("focus", function () {
+
+        const termo = campoPesquisaPosicao.value.trim();
+
+        if (
+            termo.length >= 2
+            && campoPosicaoId.value === ""
+        ) {
+
+            pesquisarPosicoes(termo);
+
+        }
+
+    });
+
     formulario.addEventListener("submit", function (evento) {
 
         if (!campoProdutoId.value) {
 
             evento.preventDefault();
 
-            mensagem.textContent =
+            mensagemProduto.textContent =
                 "Selecione um produto na lista de resultados.";
 
-            mensagem.className =
+            mensagemProduto.className =
                 "small mt-2 text-danger";
 
-            campoPesquisa.focus();
+            campoPesquisaProduto.focus();
+
+            return;
+
+        }
+
+        if (!campoPosicaoId.value) {
+
+            evento.preventDefault();
+
+            mensagemPosicao.textContent =
+                "Selecione uma posição na lista de resultados.";
+
+            mensagemPosicao.className =
+                "small mt-2 text-danger";
+
+            campoPesquisaPosicao.focus();
 
         }
 
@@ -684,11 +1036,20 @@ document.addEventListener("DOMContentLoaded", function () {
     document.addEventListener("click", function (evento) {
 
         if (
-            !resultados.contains(evento.target)
-            && evento.target !== campoPesquisa
+            !resultadosProdutos.contains(evento.target)
+            && evento.target !== campoPesquisaProduto
         ) {
 
-            esconderResultados();
+            esconderResultadosProdutos();
+
+        }
+
+        if (
+            !resultadosPosicoes.contains(evento.target)
+            && evento.target !== campoPesquisaPosicao
+        ) {
+
+            esconderResultadosPosicoes();
 
         }
 

@@ -1,38 +1,39 @@
 {% extends "base.html" %}
 
 {% block title %}
-
 {% if modulo %}
 Editar Módulo
 {% else %}
 Novo Módulo
 {% endif %}
-
 {% endblock %}
 
 {% block content %}
 
 <div class="container mt-4">
 
-    {% if modulo %}
-        <h2>Editar Módulo</h2>
-    {% else %}
-        <h2>Novo Módulo</h2>
-    {% endif %}
+    <h2>
+
+        {% if modulo %}
+            Editar Módulo
+        {% else %}
+            Novo Módulo
+        {% endif %}
+
+    </h2>
 
     <form method="POST">
 
         <div class="mb-3">
 
             <label class="form-label">
-                Nome do Módulo
+                Nome
             </label>
 
             <input
                 type="text"
                 name="nome"
                 class="form-control"
-                maxlength="50"
                 required
                 value="{{ modulo.nome if modulo else '' }}">
 
@@ -50,18 +51,21 @@ Novo Módulo
                 required>
 
                 <option value="">
-                    Selecione um prédio
+                    Selecione...
                 </option>
 
                 {% for predio in predios %}
 
                     <option
                         value="{{ predio.id }}"
-                        {% if modulo and modulo.predio_id == predio.id %}
-                            selected
-                        {% endif %}>
+                        {% if modulo and modulo.predio_id == predio.id %}selected{% endif %}>
 
-                        {{ predio.rua.nome }} → {{ predio.nome }}
+                        {{ predio.rua.nome }}
+                        →
+                        {{ predio.nome }}
+                        {% if predio.modulos_cadastrados %}
+                            — MÓDULOS: {{ predio.modulos_cadastrados }}
+                        {% endif %}
 
                     </option>
 

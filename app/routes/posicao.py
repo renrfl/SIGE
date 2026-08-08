@@ -11,6 +11,23 @@ posicao_bp = Blueprint(
 )
 
 
+def preparar_niveis():
+
+    niveis = Nivel.query.filter_by(
+        ativo=True
+    ).order_by(
+        Nivel.nome
+    ).all()
+
+    for nivel in niveis:
+
+        nivel.posicoes_cadastradas = len(
+            nivel.posicoes
+        )
+
+    return niveis
+
+
 def obter_destino_retorno():
 
     origem = request.args.get(
@@ -63,11 +80,7 @@ def listar():
 @posicao_bp.route("/novo", methods=["GET", "POST"])
 def novo():
 
-    niveis = Nivel.query.filter_by(
-        ativo=True
-    ).order_by(
-        Nivel.nome
-    ).all()
+    niveis = preparar_niveis()
 
     if request.method == "POST":
 
@@ -182,19 +195,21 @@ def editar(id):
         id
     )
 
-    niveis = Nivel.query.filter_by(
-        ativo=True
-    ).order_by(
-        Nivel.nome
-    ).all()
+    niveis = preparar_niveis()
 
     if (
         posicao.nivel
         and posicao.nivel not in niveis
     ):
 
+        nivel_atual = posicao.nivel
+
+        nivel_atual.posicoes_cadastradas = len(
+            nivel_atual.posicoes
+        )
+
         niveis.append(
-            posicao.nivel
+            nivel_atual
         )
 
         niveis.sort(

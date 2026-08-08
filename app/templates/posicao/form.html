@@ -1,38 +1,39 @@
 {% extends "base.html" %}
 
 {% block title %}
-
 {% if posicao %}
 Editar Posição
 {% else %}
 Nova Posição
 {% endif %}
-
 {% endblock %}
 
 {% block content %}
 
 <div class="container mt-4">
 
-    {% if posicao %}
-        <h2>Editar Posição</h2>
-    {% else %}
-        <h2>Nova Posição</h2>
-    {% endif %}
+    <h2>
+
+        {% if posicao %}
+            Editar Posição
+        {% else %}
+            Nova Posição
+        {% endif %}
+
+    </h2>
 
     <form method="POST">
 
         <div class="mb-3">
 
             <label class="form-label">
-                Nome da Posição
+                Nome
             </label>
 
             <input
                 type="text"
                 name="nome"
                 class="form-control"
-                maxlength="50"
                 required
                 value="{{ posicao.nome if posicao else '' }}">
 
@@ -50,16 +51,14 @@ Nova Posição
                 required>
 
                 <option value="">
-                    Selecione um nível
+                    Selecione...
                 </option>
 
                 {% for nivel in niveis %}
 
                     <option
                         value="{{ nivel.id }}"
-                        {% if posicao and posicao.nivel_id == nivel.id %}
-                            selected
-                        {% endif %}>
+                        {% if posicao and posicao.nivel_id == nivel.id %}selected{% endif %}>
 
                         {{ nivel.modulo.predio.rua.nome }}
                         →
@@ -68,6 +67,9 @@ Nova Posição
                         {{ nivel.modulo.nome }}
                         →
                         {{ nivel.nome }}
+                        {% if nivel.posicoes_cadastradas %}
+                            — POSIÇÕES: {{ nivel.posicoes_cadastradas }}
+                        {% endif %}
 
                     </option>
 

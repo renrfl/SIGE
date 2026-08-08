@@ -1,5 +1,6 @@
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
+import re
 
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from sqlalchemy import String, cast, or_
 
 from app import db
@@ -11,6 +12,55 @@ endereco_bp = Blueprint(
     __name__,
     url_prefix="/enderecos"
 )
+
+
+def formatar_endereco_posicao(posicao):
+
+    rua = posicao.nivel.modulo.predio.rua.nome
+    predio = posicao.nivel.modulo.predio.nome
+    modulo = posicao.nivel.modulo.nome
+    nivel = posicao.nivel.nome
+    posicao_nome = posicao.nome
+
+    nomes_estrutura = [
+        rua.strip().upper(),
+        predio.strip().upper(),
+        modulo.strip().upper(),
+        nivel.strip().upper()
+    ]
+
+    if all(nome == "AVARIA" for nome in nomes_estrutura):
+        return f"AVARIA → {posicao_nome}"
+
+    if all(nome == "DEPOSITO" for nome in nomes_estrutura):
+        return f"DEPOSITO → {posicao_nome}"
+
+    return (
+        f"{rua}"
+        f" → {predio}"
+        f" → {modulo}"
+        f" → {nivel}"
+        f" → {posicao_nome}"
+    )
+
+
+def normalizar_texto(texto):
+
+    texto = texto.upper()
+
+    texto = re.sub(
+        r"[^A-Z0-9]+",
+        " ",
+        texto
+    )
+
+    texto = re.sub(
+        r"\s+",
+        " ",
+        texto
+    )
+
+    return texto.strip()
 
 
 def preparar_opcoes_formulario():
@@ -30,7 +80,6 @@ def preparar_opcoes_formulario():
     enderecos = ProdutoEndereco.query.all()
 
     quantidade_enderecos_por_produto = {}
-
     ocupacao_por_posicao = {}
 
     for endereco in enderecos:
@@ -46,10 +95,7 @@ def preparar_opcoes_formulario():
         )
 
         if endereco.posicao_id not in ocupacao_por_posicao:
-
-            ocupacao_por_posicao[
-                endereco.posicao_id
-            ] = endereco
+            ocupacao_por_posicao[endereco.posicao_id] = endereco
 
     for produto in produtos:
 
@@ -95,7 +141,6 @@ def buscar_ocupacao_posicao(
     )
 
     if endereco_id is not None:
-
         consulta = consulta.filter(
             ProdutoEndereco.id != endereco_id
         )
@@ -110,19 +155,14 @@ def substituir_ocupacao_posicao(
 
     produto_anterior = ocupacao.produto
 
-    db.session.delete(
-        ocupacao
-    )
+    db.session.delete(ocupacao)
 
     novo_endereco = ProdutoEndereco(
         produto_id=produto_id,
         posicao_id=ocupacao.posicao_id
     )
 
-    db.session.add(
-        novo_endereco
-    )
-
+    db.session.add(novo_endereco)
     db.session.commit()
 
     return produto_anterior
@@ -137,10 +177,7 @@ def buscar_produtos():
     ).strip()
 
     if len(termo) < 2:
-
-        return jsonify(
-            []
-        )
+        return jsonify([])
 
     padrao = f"%{termo}%"
 
@@ -171,19 +208,10 @@ def buscar_produtos():
         enderecos = []
 
         for vinculo in produto.enderecos:
-
-            posicao = vinculo.posicao
-
-            endereco_formatado = (
-                f"{posicao.nivel.modulo.predio.rua.nome}"
-                f" → {posicao.nivel.modulo.predio.nome}"
-                f" → {posicao.nivel.modulo.nome}"
-                f" → {posicao.nivel.nome}"
-                f" → {posicao.nome}"
-            )
-
             enderecos.append(
-                endereco_formatado
+                formatar_endereco_posicao(
+                    vinculo.posicao
+                )
             )
 
         resultados.append(
@@ -198,9 +226,67 @@ def buscar_produtos():
             }
         )
 
-    return jsonify(
-        resultados
+    return jsonify(resultados)
+
+
+@endereco_bp.route("/buscar-posicoes")
+def buscar_posicoes():
+
+    termo = request.args.get(
+        "q",
+        ""
+    ).strip()
+
+    if len(termo) < 2:
+        return jsonify([])
+
+    termo_normalizado = normalizar_texto(
+        termo
     )
+
+    posicoes = Posicao.query.filter_by(
+        ativo=True
+    ).all()
+
+    resultados = []
+
+    for posicao in posicoes:
+
+        endereco_formatado = formatar_endereco_posicao(
+            posicao
+        )
+
+        endereco_normalizado = normalizar_texto(
+            endereco_formatado
+        )
+
+        if termo_normalizado not in endereco_normalizado:
+            continue
+
+        ocupacao = ProdutoEndereco.query.filter_by(
+            posicao_id=posicao.id
+        ).first()
+
+        resultado = {
+            "id": posicao.id,
+            "endereco": endereco_formatado,
+            "ocupada": ocupacao is not None,
+            "produto": None
+        }
+
+        if ocupacao:
+            resultado["produto"] = {
+                "id": ocupacao.produto.id,
+                "codigo": ocupacao.produto.codigo,
+                "descricao": ocupacao.produto.descricao
+            }
+
+        resultados.append(resultado)
+
+        if len(resultados) >= 20:
+            break
+
+    return jsonify(resultados)
 
 
 @endereco_bp.route("/")
@@ -331,10 +417,7 @@ def novo():
             posicao_id=posicao_id
         )
 
-        db.session.add(
-            endereco
-        )
-
+        db.session.add(endereco)
         db.session.commit()
 
         flash(
@@ -360,16 +443,11 @@ def novo():
 @endereco_bp.route("/editar/<int:id>", methods=["GET", "POST"])
 def editar(id):
 
-    endereco = ProdutoEndereco.query.get_or_404(
-        id
-    )
+    endereco = ProdutoEndereco.query.get_or_404(id)
 
     produtos, posicoes = preparar_opcoes_formulario()
 
-    if (
-        endereco.produto
-        and endereco.produto not in produtos
-    ):
+    if endereco.produto and endereco.produto not in produtos:
 
         endereco.produto.total_enderecos = len(
             endereco.produto.enderecos
@@ -377,25 +455,18 @@ def editar(id):
 
         endereco.produto.enderecado = True
 
-        produtos.append(
-            endereco.produto
-        )
+        produtos.append(endereco.produto)
 
         produtos.sort(
             key=lambda produto: produto.descricao.lower()
         )
 
-    if (
-        endereco.posicao
-        and endereco.posicao not in posicoes
-    ):
+    if endereco.posicao and endereco.posicao not in posicoes:
 
         endereco.posicao.ocupada = True
         endereco.posicao.produto_ocupante = endereco.produto
 
-        posicoes.append(
-            endereco.posicao
-        )
+        posicoes.append(endereco.posicao)
 
         posicoes.sort(
             key=lambda posicao: posicao.nome.lower()
@@ -437,18 +508,10 @@ def editar(id):
                 conflito=None
             )
 
-        produto = Produto.query.get_or_404(
-            produto_id
-        )
+        produto = Produto.query.get_or_404(produto_id)
+        posicao = Posicao.query.get_or_404(posicao_id)
 
-        posicao = Posicao.query.get_or_404(
-            posicao_id
-        )
-
-        if (
-            not produto.ativo
-            and produto.id != endereco.produto_id
-        ):
+        if not produto.ativo and produto.id != endereco.produto_id:
 
             flash(
                 "Não é permitido selecionar um produto inativo.",
@@ -462,10 +525,7 @@ def editar(id):
                 )
             )
 
-        if (
-            not posicao.ativo
-            and posicao.id != endereco.posicao_id
-        ):
+        if not posicao.ativo and posicao.id != endereco.posicao_id:
 
             flash(
                 "Não é permitido selecionar uma posição inativa.",
@@ -525,9 +585,7 @@ def editar(id):
 
             produto_anterior = ocupacao.produto
 
-            db.session.delete(
-                ocupacao
-            )
+            db.session.delete(ocupacao)
 
             endereco.produto_id = produto_id
             endereco.posicao_id = posicao_id
@@ -575,14 +633,9 @@ def editar(id):
 @endereco_bp.route("/excluir/<int:id>")
 def excluir(id):
 
-    endereco = ProdutoEndereco.query.get_or_404(
-        id
-    )
+    endereco = ProdutoEndereco.query.get_or_404(id)
 
-    db.session.delete(
-        endereco
-    )
-
+    db.session.delete(endereco)
     db.session.commit()
 
     flash(

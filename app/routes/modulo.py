@@ -11,6 +11,23 @@ modulo_bp = Blueprint(
 )
 
 
+def preparar_predios():
+
+    predios = Predio.query.filter_by(
+        ativo=True
+    ).order_by(
+        Predio.nome
+    ).all()
+
+    for predio in predios:
+
+        predio.modulos_cadastrados = len(
+            predio.modulos
+        )
+
+    return predios
+
+
 @modulo_bp.route("/")
 def listar():
 
@@ -27,17 +44,11 @@ def listar():
 @modulo_bp.route("/novo", methods=["GET", "POST"])
 def novo():
 
-    predios = Predio.query.filter_by(
-        ativo=True
-    ).order_by(
-        Predio.nome
-    ).all()
+    predios = preparar_predios()
 
     if request.method == "POST":
 
-        nome = request.form[
-            "nome"
-        ].strip()
+        nome = request.form["nome"].strip()
 
         predio_id = request.form.get(
             "predio_id",
@@ -52,9 +63,7 @@ def novo():
             )
 
             return redirect(
-                url_for(
-                    "modulo.novo"
-                )
+                url_for("modulo.novo")
             )
 
         if not predio_id:
@@ -65,9 +74,7 @@ def novo():
             )
 
             return redirect(
-                url_for(
-                    "modulo.novo"
-                )
+                url_for("modulo.novo")
             )
 
         predio = Predio.query.filter_by(
@@ -83,9 +90,7 @@ def novo():
             )
 
             return redirect(
-                url_for(
-                    "modulo.novo"
-                )
+                url_for("modulo.novo")
             )
 
         modulo_existente = Modulo.query.filter_by(
@@ -101,9 +106,7 @@ def novo():
             )
 
             return redirect(
-                url_for(
-                    "modulo.novo"
-                )
+                url_for("modulo.novo")
             )
 
         modulo = Modulo(
@@ -112,10 +115,7 @@ def novo():
             ativo=True
         )
 
-        db.session.add(
-            modulo
-        )
-
+        db.session.add(modulo)
         db.session.commit()
 
         flash(
@@ -124,9 +124,7 @@ def novo():
         )
 
         return redirect(
-            url_for(
-                "modulo.listar"
-            )
+            url_for("modulo.listar")
         )
 
     return render_template(
@@ -142,23 +140,23 @@ def novo():
 )
 def editar(id):
 
-    modulo = Modulo.query.get_or_404(
-        id
-    )
+    modulo = Modulo.query.get_or_404(id)
 
-    predios = Predio.query.filter_by(
-        ativo=True
-    ).order_by(
-        Predio.nome
-    ).all()
+    predios = preparar_predios()
 
     if (
         modulo.predio
         and modulo.predio not in predios
     ):
 
+        predio_atual = modulo.predio
+
+        predio_atual.modulos_cadastrados = len(
+            predio_atual.modulos
+        )
+
         predios.append(
-            modulo.predio
+            predio_atual
         )
 
         predios.sort(
@@ -167,9 +165,7 @@ def editar(id):
 
     if request.method == "POST":
 
-        nome = request.form[
-            "nome"
-        ].strip()
+        nome = request.form["nome"].strip()
 
         predio_id = request.form.get(
             "predio_id",
@@ -270,9 +266,7 @@ def editar(id):
         )
 
         return redirect(
-            url_for(
-                "modulo.listar"
-            )
+            url_for("modulo.listar")
         )
 
     return render_template(
@@ -288,9 +282,7 @@ def editar(id):
 )
 def alternar_status(id):
 
-    modulo = Modulo.query.get_or_404(
-        id
-    )
+    modulo = Modulo.query.get_or_404(id)
 
     novo_status = not modulo.ativo
 
@@ -335,7 +327,5 @@ def alternar_status(id):
         )
 
     return redirect(
-        url_for(
-            "modulo.listar"
-        )
+        url_for("modulo.listar")
     )

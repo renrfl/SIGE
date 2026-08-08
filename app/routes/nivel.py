@@ -11,6 +11,29 @@ nivel_bp = Blueprint(
 )
 
 
+def preparar_modulos():
+
+    modulos = Modulo.query.filter_by(
+        ativo=True
+    ).order_by(
+        Modulo.nome
+    ).all()
+
+    for modulo in modulos:
+
+        niveis = sorted(
+            modulo.niveis,
+            key=lambda nivel: nivel.nome.lower()
+        )
+
+        modulo.niveis_cadastrados = ", ".join(
+            nivel.nome
+            for nivel in niveis
+        )
+
+    return modulos
+
+
 @nivel_bp.route("/")
 def listar():
 
@@ -27,11 +50,7 @@ def listar():
 @nivel_bp.route("/novo", methods=["GET", "POST"])
 def novo():
 
-    modulos = Modulo.query.filter_by(
-        ativo=True
-    ).order_by(
-        Modulo.nome
-    ).all()
+    modulos = preparar_modulos()
 
     if request.method == "POST":
 
@@ -146,19 +165,27 @@ def editar(id):
         id
     )
 
-    modulos = Modulo.query.filter_by(
-        ativo=True
-    ).order_by(
-        Modulo.nome
-    ).all()
+    modulos = preparar_modulos()
 
     if (
         nivel.modulo
         and nivel.modulo not in modulos
     ):
 
+        modulo_atual = nivel.modulo
+
+        niveis = sorted(
+            modulo_atual.niveis,
+            key=lambda item: item.nome.lower()
+        )
+
+        modulo_atual.niveis_cadastrados = ", ".join(
+            item.nome
+            for item in niveis
+        )
+
         modulos.append(
-            nivel.modulo
+            modulo_atual
         )
 
         modulos.sort(
