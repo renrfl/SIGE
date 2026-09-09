@@ -6,7 +6,11 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from app import db
-from app.models import Produto, ProdutoEndereco
+from app.models import (
+    DivergenciaCodigoBarras,
+    Produto,
+    ProdutoEndereco
+)
 
 
 produto_bp = Blueprint(
@@ -59,20 +63,24 @@ def ler_arquivo_csv(arquivo):
         raise ValueError("O arquivo CSV está vazio.")
 
     try:
+
         texto = conteudo.decode("utf-8-sig")
 
     except UnicodeDecodeError:
+
         texto = conteudo.decode("latin-1")
 
     amostra = texto[:4096]
 
     try:
+
         delimitador = csv.Sniffer().sniff(
             amostra,
             delimiters=",;"
         ).delimiter
 
     except csv.Error:
+
         delimitador = ";"
 
     leitor = csv.DictReader(
@@ -81,7 +89,10 @@ def ler_arquivo_csv(arquivo):
     )
 
     if not leitor.fieldnames:
-        raise ValueError("O arquivo CSV não possui cabeçalho.")
+
+        raise ValueError(
+            "O arquivo CSV não possui cabeçalho."
+        )
 
     leitor.fieldnames = [
         campo.strip().lower()
@@ -111,6 +122,39 @@ def ler_arquivo_csv(arquivo):
     return list(leitor)
 
 
+def corrigir_divergencias_produto(
+    produto,
+    novo_codigo_barras,
+    divergencias_pendentes_por_produto
+):
+
+    if not novo_codigo_barras:
+        return 0
+
+    divergencias = (
+        divergencias_pendentes_por_produto.get(
+            produto.id,
+            []
+        )
+    )
+
+    quantidade_corrigida = 0
+
+    for divergencia in divergencias:
+
+        if (
+            divergencia.status == "PENDENTE"
+            and divergencia.codigo_barras_fisico
+            == novo_codigo_barras
+        ):
+
+            divergencia.status = "CORRIGIDO"
+
+            quantidade_corrigida += 1
+
+    return quantidade_corrigida
+
+
 @produto_bp.route("/")
 def listar():
 
@@ -123,10 +167,15 @@ def listar():
         )
         .outerjoin(
             ProdutoEndereco,
-            ProdutoEndereco.produto_id == Produto.id
+            ProdutoEndereco.produto_id
+            == Produto.id
         )
-        .group_by(Produto.id)
-        .order_by(Produto.descricao)
+        .group_by(
+            Produto.id
+        )
+        .order_by(
+            Produto.descricao
+        )
         .all()
     )
 
@@ -134,10 +183,17 @@ def listar():
 
     for produto, total_enderecos in resultados:
 
-        produto.enderecado = total_enderecos > 0
-        produto.total_enderecos = total_enderecos
+        produto.enderecado = (
+            total_enderecos > 0
+        )
 
-        produtos.append(produto)
+        produto.total_enderecos = (
+            total_enderecos
+        )
+
+        produtos.append(
+            produto
+        )
 
     return render_template(
         "produto/listar.html",
@@ -145,14 +201,28 @@ def listar():
     )
 
 
-@produto_bp.route("/novo", methods=["GET", "POST"])
+@produto_bp.route(
+    "/novo",
+    methods=["GET", "POST"]
+)
 def novo():
 
     if request.method == "POST":
 
-        codigo = request.form["codigo"].strip()
-        codigo_barras = request.form["codigo_barras"].strip()
-        descricao = request.form["descricao"].strip()
+        codigo = (
+            request.form["codigo"]
+            .strip()
+        )
+
+        codigo_barras = (
+            request.form["codigo_barras"]
+            .strip()
+        )
+
+        descricao = (
+            request.form["descricao"]
+            .strip()
+        )
 
         if not codigo:
 
@@ -162,29 +232,41 @@ def novo():
             )
 
             return redirect(
-                url_for("produto.novo")
+                url_for(
+                    "produto.novo"
+                )
             )
 
         if not codigo.isdigit():
 
             flash(
-                "O código do produto deve conter somente números.",
+                (
+                    "O código do produto deve "
+                    "conter somente números."
+                ),
                 "danger"
             )
 
             return redirect(
-                url_for("produto.novo")
+                url_for(
+                    "produto.novo"
+                )
             )
 
         if not codigo_barras:
 
             flash(
-                "Informe o código de barras do produto.",
+                (
+                    "Informe o código de barras "
+                    "do produto."
+                ),
                 "danger"
             )
 
             return redirect(
-                url_for("produto.novo")
+                url_for(
+                    "produto.novo"
+                )
             )
 
         if not descricao:
@@ -195,36 +277,55 @@ def novo():
             )
 
             return redirect(
-                url_for("produto.novo")
+                url_for(
+                    "produto.novo"
+                )
             )
 
-        produto_existente = Produto.query.filter(
-            db.or_(
-                Produto.codigo == int(codigo),
-                Produto.codigo_barras == codigo_barras
+        produto_existente = (
+            Produto.query
+            .filter(
+                db.or_(
+                    Produto.codigo
+                    == int(codigo),
+
+                    Produto.codigo_barras
+                    == codigo_barras
+                )
             )
-        ).first()
+            .first()
+        )
 
         if produto_existente:
 
             flash(
-                "Já existe um produto com esse código ou código de barras.",
+                (
+                    "Já existe um produto com "
+                    "esse código ou código de barras."
+                ),
                 "warning"
             )
 
             return redirect(
-                url_for("produto.novo")
+                url_for(
+                    "produto.novo"
+                )
             )
 
         produto = Produto(
-            codigo=int(codigo),
+            codigo=int(
+                codigo
+            ),
             codigo_barras=codigo_barras,
             descricao=descricao
         )
 
         try:
 
-            db.session.add(produto)
+            db.session.add(
+                produto
+            )
+
             db.session.commit()
 
         except IntegrityError:
@@ -232,12 +333,17 @@ def novo():
             db.session.rollback()
 
             flash(
-                "Não foi possível cadastrar o produto. Verifique os dados informados.",
+                (
+                    "Não foi possível cadastrar o produto. "
+                    "Verifique os dados informados."
+                ),
                 "danger"
             )
 
             return redirect(
-                url_for("produto.novo")
+                url_for(
+                    "produto.novo"
+                )
             )
 
         flash(
@@ -246,7 +352,9 @@ def novo():
         )
 
         return redirect(
-            url_for("produto.listar")
+            url_for(
+                "produto.listar"
+            )
         )
 
     return render_template(
@@ -255,14 +363,22 @@ def novo():
     )
 
 
-@produto_bp.route("/importar", methods=["GET", "POST"])
+@produto_bp.route(
+    "/importar",
+    methods=["GET", "POST"]
+)
 def importar():
 
     if request.method == "POST":
 
-        arquivo = request.files.get("arquivo")
+        arquivo = request.files.get(
+            "arquivo"
+        )
 
-        if not arquivo or not arquivo.filename:
+        if (
+            not arquivo
+            or not arquivo.filename
+        ):
 
             flash(
                 "Selecione um arquivo CSV.",
@@ -270,46 +386,85 @@ def importar():
             )
 
             return redirect(
-                url_for("produto.importar")
+                url_for(
+                    "produto.importar"
+                )
             )
 
-        if not arquivo.filename.lower().endswith(".csv"):
+        if not arquivo.filename.lower().endswith(
+            ".csv"
+        ):
 
             flash(
-                "O arquivo selecionado deve possuir a extensão .csv.",
+                (
+                    "O arquivo selecionado deve "
+                    "possuir a extensão .csv."
+                ),
                 "danger"
             )
 
             return redirect(
-                url_for("produto.importar")
+                url_for(
+                    "produto.importar"
+                )
             )
 
         try:
-            linhas = ler_arquivo_csv(arquivo)
+
+            linhas = ler_arquivo_csv(
+                arquivo
+            )
 
         except ValueError as erro:
 
             flash(
-                str(erro),
+                str(
+                    erro
+                ),
                 "danger"
             )
 
             return redirect(
-                url_for("produto.importar")
+                url_for(
+                    "produto.importar"
+                )
             )
 
-        produtos_existentes = Produto.query.all()
+        produtos_existentes = (
+            Produto.query.all()
+        )
 
         produtos_por_codigo = {
             produto.codigo: produto
-            for produto in produtos_existentes
+            for produto
+            in produtos_existentes
         }
 
         produtos_por_codigo_barras = {
             produto.codigo_barras: produto
-            for produto in produtos_existentes
+            for produto
+            in produtos_existentes
             if produto.codigo_barras
         }
+
+        divergencias_pendentes = (
+            DivergenciaCodigoBarras.query
+            .filter_by(
+                status="PENDENTE"
+            )
+            .all()
+        )
+
+        divergencias_pendentes_por_produto = {}
+
+        for divergencia in divergencias_pendentes:
+
+            divergencias_pendentes_por_produto.setdefault(
+                divergencia.produto_id,
+                []
+            ).append(
+                divergencia
+            )
 
         codigos_csv = set()
         codigos_barras_csv = set()
@@ -317,6 +472,8 @@ def importar():
         novos = 0
         atualizados = 0
         ignorados = 0
+        divergencias_corrigidas = 0
+
         erros = []
 
         for numero_linha, linha in enumerate(
@@ -324,19 +481,41 @@ def importar():
             start=2
         ):
 
-            codigo = (linha.get("codigo") or "").strip()
-            codigo_barras = (
-                linha.get("codigo_barras") or ""
+            codigo = (
+                linha.get(
+                    "codigo"
+                )
+                or ""
             ).strip()
-            descricao = (
-                linha.get("descricao") or ""
-            ).strip()
-            status = linha.get("ativo")
 
-            if not codigo or not codigo.isdigit():
+            codigo_barras = (
+                linha.get(
+                    "codigo_barras"
+                )
+                or ""
+            ).strip()
+
+            descricao = (
+                linha.get(
+                    "descricao"
+                )
+                or ""
+            ).strip()
+
+            status = linha.get(
+                "ativo"
+            )
+
+            if (
+                not codigo
+                or not codigo.isdigit()
+            ):
 
                 erros.append(
-                    f"Linha {numero_linha}: código inválido."
+                    (
+                        f"Linha {numero_linha}: "
+                        "código inválido."
+                    )
                 )
 
                 continue
@@ -344,20 +523,31 @@ def importar():
             if not descricao:
 
                 erros.append(
-                    f"Linha {numero_linha}: descrição não informada."
+                    (
+                        f"Linha {numero_linha}: "
+                        "descrição não informada."
+                    )
                 )
 
                 continue
 
-            codigo = int(codigo)
+            codigo = int(
+                codigo
+            )
 
             try:
-                ativo = converter_status(status)
+
+                ativo = converter_status(
+                    status
+                )
 
             except ValueError:
 
                 erros.append(
-                    f"Linha {numero_linha}: status ativo inválido."
+                    (
+                        f"Linha {numero_linha}: "
+                        "status ativo inválido."
+                    )
                 )
 
                 continue
@@ -365,28 +555,45 @@ def importar():
             if codigo in codigos_csv:
 
                 erros.append(
-                    f"Linha {numero_linha}: código {codigo} repetido no CSV."
+                    (
+                        f"Linha {numero_linha}: "
+                        f"código {codigo} repetido no CSV."
+                    )
                 )
 
                 continue
 
             if (
                 codigo_barras
-                and codigo_barras in codigos_barras_csv
+                and codigo_barras
+                in codigos_barras_csv
             ):
 
                 erros.append(
-                    f"Linha {numero_linha}: código de barras {codigo_barras} repetido no CSV."
+                    (
+                        f"Linha {numero_linha}: "
+                        "código de barras "
+                        f"{codigo_barras} repetido no CSV."
+                    )
                 )
 
                 continue
 
-            codigos_csv.add(codigo)
+            codigos_csv.add(
+                codigo
+            )
 
             if codigo_barras:
-                codigos_barras_csv.add(codigo_barras)
 
-            produto = produtos_por_codigo.get(codigo)
+                codigos_barras_csv.add(
+                    codigo_barras
+                )
+
+            produto = (
+                produtos_por_codigo.get(
+                    codigo
+                )
+            )
 
             produto_do_codigo_barras = None
 
@@ -400,11 +607,17 @@ def importar():
 
             if (
                 produto_do_codigo_barras
-                and produto_do_codigo_barras is not produto
+                and produto_do_codigo_barras
+                is not produto
             ):
 
                 erros.append(
-                    f"Linha {numero_linha}: o código de barras {codigo_barras} pertence a outro produto."
+                    (
+                        f"Linha {numero_linha}: "
+                        "o código de barras "
+                        f"{codigo_barras} pertence "
+                        "a outro produto."
+                    )
                 )
 
                 continue
@@ -419,7 +632,10 @@ def importar():
                     else None
                 )
 
-                if produto.codigo_barras != novo_codigo_barras:
+                if (
+                    produto.codigo_barras
+                    != novo_codigo_barras
+                ):
 
                     if produto.codigo_barras:
 
@@ -428,7 +644,9 @@ def importar():
                             None
                         )
 
-                    produto.codigo_barras = novo_codigo_barras
+                    produto.codigo_barras = (
+                        novo_codigo_barras
+                    )
 
                     if novo_codigo_barras:
 
@@ -439,17 +657,35 @@ def importar():
                     houve_alteracao = True
 
                 if produto.descricao != descricao:
+
                     produto.descricao = descricao
+
                     houve_alteracao = True
 
                 if produto.ativo != ativo:
+
                     produto.ativo = ativo
+
                     houve_alteracao = True
 
+                quantidade_corrigida = (
+                    corrigir_divergencias_produto(
+                        produto,
+                        novo_codigo_barras,
+                        divergencias_pendentes_por_produto
+                    )
+                )
+
+                divergencias_corrigidas += (
+                    quantidade_corrigida
+                )
+
                 if houve_alteracao:
+
                     atualizados += 1
 
                 else:
+
                     ignorados += 1
 
                 continue
@@ -465,9 +701,14 @@ def importar():
                 ativo=ativo
             )
 
-            db.session.add(produto)
+            db.session.add(
+                produto
+            )
 
-            produtos_por_codigo[codigo] = produto
+            produtos_por_codigo[
+                codigo
+            ] = produto
+
             if codigo_barras:
 
                 produtos_por_codigo_barras[
@@ -480,23 +721,33 @@ def importar():
 
             db.session.rollback()
 
-            mensagem = " ".join(erros[:5])
+            mensagem = " ".join(
+                erros[:5]
+            )
 
             if len(erros) > 5:
+
                 mensagem += (
-                    f" Existem mais {len(erros) - 5} erro(s)."
+                    f" Existem mais "
+                    f"{len(erros) - 5} erro(s)."
                 )
 
             flash(
-                "Importação cancelada. " + mensagem,
+                (
+                    "Importação cancelada. "
+                    + mensagem
+                ),
                 "danger"
             )
 
             return redirect(
-                url_for("produto.importar")
+                url_for(
+                    "produto.importar"
+                )
             )
 
         try:
+
             db.session.commit()
 
         except IntegrityError:
@@ -504,26 +755,46 @@ def importar():
             db.session.rollback()
 
             flash(
-                "A importação não foi concluída devido a um conflito entre códigos ou códigos de barras.",
+                (
+                    "A importação não foi concluída "
+                    "devido a um conflito entre códigos "
+                    "ou códigos de barras."
+                ),
                 "danger"
             )
 
             return redirect(
-                url_for("produto.importar")
+                url_for(
+                    "produto.importar"
+                )
+            )
+
+        mensagem_importacao = (
+            "Importação concluída: "
+            f"{novos} novo(s), "
+            f"{atualizados} atualizado(s) e "
+            f"{ignorados} sem alteração."
+        )
+
+        if divergencias_corrigidas:
+
+            mensagem_importacao += (
+                " "
+                f"{divergencias_corrigidas} "
+                "divergência(s) de código de barras "
+                "confirmada(s) como corrigida(s) "
+                "pelo WinThor."
             )
 
         flash(
-            (
-                "Importação concluída: "
-                f"{novos} novo(s), "
-                f"{atualizados} atualizado(s) e "
-                f"{ignorados} sem alteração."
-            ),
+            mensagem_importacao,
             "success"
         )
 
         return redirect(
-            url_for("produto.listar")
+            url_for(
+                "produto.listar"
+            )
         )
 
     return render_template(
@@ -531,16 +802,35 @@ def importar():
     )
 
 
-@produto_bp.route("/editar/<int:id>", methods=["GET", "POST"])
+@produto_bp.route(
+    "/editar/<int:id>",
+    methods=["GET", "POST"]
+)
 def editar(id):
 
-    produto = Produto.query.get_or_404(id)
+    produto = (
+        Produto.query
+        .get_or_404(
+            id
+        )
+    )
 
     if request.method == "POST":
 
-        codigo = request.form["codigo"].strip()
-        codigo_barras = request.form["codigo_barras"].strip()
-        descricao = request.form["descricao"].strip()
+        codigo = (
+            request.form["codigo"]
+            .strip()
+        )
+
+        codigo_barras = (
+            request.form["codigo_barras"]
+            .strip()
+        )
+
+        descricao = (
+            request.form["descricao"]
+            .strip()
+        )
 
         if not codigo:
 
@@ -559,7 +849,10 @@ def editar(id):
         if not codigo.isdigit():
 
             flash(
-                "O código do produto deve conter somente números.",
+                (
+                    "O código do produto deve "
+                    "conter somente números."
+                ),
                 "danger"
             )
 
@@ -573,7 +866,10 @@ def editar(id):
         if not codigo_barras:
 
             flash(
-                "Informe o código de barras do produto.",
+                (
+                    "Informe o código de barras "
+                    "do produto."
+                ),
                 "danger"
             )
 
@@ -598,18 +894,29 @@ def editar(id):
                 )
             )
 
-        produto_existente = Produto.query.filter(
-            db.or_(
-                Produto.codigo == int(codigo),
-                Produto.codigo_barras == codigo_barras
-            ),
-            Produto.id != produto.id
-        ).first()
+        produto_existente = (
+            Produto.query
+            .filter(
+                db.or_(
+                    Produto.codigo
+                    == int(codigo),
+
+                    Produto.codigo_barras
+                    == codigo_barras
+                ),
+                Produto.id
+                != produto.id
+            )
+            .first()
+        )
 
         if produto_existente:
 
             flash(
-                "Já existe outro produto com esse código ou código de barras.",
+                (
+                    "Já existe outro produto com "
+                    "esse código ou código de barras."
+                ),
                 "warning"
             )
 
@@ -620,9 +927,17 @@ def editar(id):
                 )
             )
 
-        produto.codigo = int(codigo)
-        produto.codigo_barras = codigo_barras
-        produto.descricao = descricao
+        produto.codigo = int(
+            codigo
+        )
+
+        produto.codigo_barras = (
+            codigo_barras
+        )
+
+        produto.descricao = (
+            descricao
+        )
 
         try:
 
@@ -633,7 +948,10 @@ def editar(id):
             db.session.rollback()
 
             flash(
-                "Não foi possível atualizar o produto. Verifique os dados informados.",
+                (
+                    "Não foi possível atualizar o produto. "
+                    "Verifique os dados informados."
+                ),
                 "danger"
             )
 
@@ -650,7 +968,9 @@ def editar(id):
         )
 
         return redirect(
-            url_for("produto.listar")
+            url_for(
+                "produto.listar"
+            )
         )
 
     return render_template(
@@ -659,14 +979,24 @@ def editar(id):
     )
 
 
-@produto_bp.route("/excluir/<int:id>")
+@produto_bp.route(
+    "/excluir/<int:id>"
+)
 def excluir(id):
 
-    produto = Produto.query.get_or_404(id)
+    produto = (
+        Produto.query
+        .get_or_404(
+            id
+        )
+    )
 
     try:
 
-        db.session.delete(produto)
+        db.session.delete(
+            produto
+        )
+
         db.session.commit()
 
     except IntegrityError:
@@ -679,7 +1009,9 @@ def excluir(id):
         )
 
         return redirect(
-            url_for("produto.listar")
+            url_for(
+                "produto.listar"
+            )
         )
 
     flash(
@@ -688,5 +1020,7 @@ def excluir(id):
     )
 
     return redirect(
-        url_for("produto.listar")
+        url_for(
+            "produto.listar"
+        )
     )

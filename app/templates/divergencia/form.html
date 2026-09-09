@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}
+Registrar Divergência - SIGE
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-8">
+
+            <div class="card">
+
+                <div class="card-header">
+                    <strong>
+                        Registrar Divergência de Código de Barras
+                    </strong>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="mb-4">
+
+                        <div class="mb-2">
+                            <strong>Produto:</strong>
+                        </div>
+
+                        <div>
+                            {{ produto.codigo }} - {{ produto.descricao }}
+                        </div>
+
+                    </div>
+
+                    <div class="mb-4">
+
+                        <div class="mb-2">
+                            <strong>
+                                Código de barras cadastrado no SIGE / WinThor:
+                            </strong>
+                        </div>
+
+                        {% if produto.codigo_barras %}
+
+                            <div class="form-control bg-light">
+                                {{ produto.codigo_barras }}
+                            </div>
+
+                        {% else %}
+
+                            <div class="form-control bg-light text-muted">
+                                Não informado
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                    {% if divergencia_pendente %}
+
+                        <div class="alert alert-warning">
+
+                            Este produto já possui uma divergência pendente.
+
+                            <hr>
+
+                            <div>
+                                <strong>
+                                    Código físico registrado:
+                                </strong>
+
+                                {{ divergencia_pendente.codigo_barras_fisico }}
+                            </div>
+
+                            {% if divergencia_pendente.observacao %}
+
+                                <div class="mt-2">
+
+                                    <strong>
+                                        Observação:
+                                    </strong>
+
+                                    {{ divergencia_pendente.observacao }}
+
+                                </div>
+
+                            {% endif %}
+
+                        </div>
+
+                        <div class="d-flex gap-2">
+
+                            <a
+                                href="{{ url_for(
+                                    'divergencia.listar',
+                                    status='PENDENTE'
+                                ) }}"
+                                class="btn btn-secondary">
+
+                                Voltar
+
+                            </a>
+
+                        </div>
+
+                    {% else %}
+
+                        <form
+                            method="POST"
+                            action="{{ url_for(
+                                'divergencia.registrar',
+                                produto_id=produto.id
+                            ) }}">
+
+                            <div class="mb-3">
+
+                                <label
+                                    for="codigo_barras_fisico"
+                                    class="form-label">
+
+                                    Código de barras encontrado no produto físico
+
+                                </label>
+
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="codigo_barras_fisico"
+                                    name="codigo_barras_fisico"
+                                    autocomplete="off"
+                                    autofocus
+                                    required>
+
+                                <div class="form-text">
+
+                                    Informe ou bip o código que aparece na embalagem física.
+
+                                </div>
+
+                            </div>
+
+                            <div class="mb-4">
+
+                                <label
+                                    for="observacao"
+                                    class="form-label">
+
+                                    Observação
+
+                                </label>
+
+                                <textarea
+                                    class="form-control"
+                                    id="observacao"
+                                    name="observacao"
+                                    rows="3"
+                                    placeholder="Opcional"></textarea>
+
+                            </div>
+
+                            <div class="d-flex gap-2">
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-warning">
+
+                                    Registrar divergência
+
+                                </button>
+
+                                <a
+                                    href="{{ url_for(
+                                        'divergencia.listar'
+                                    ) }}"
+                                    class="btn btn-secondary">
+
+                                    Cancelar
+
+                                </a>
+
+                            </div>
+
+                        </form>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

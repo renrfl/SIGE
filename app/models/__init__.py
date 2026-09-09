@@ -6,3 +6,4 @@ from .posicao import Posicao
 from .produto import Produto
 from .produto_endereco import ProdutoEndereco
 from .usuario import Usuario
+from .divergencia_codigo_barras import DivergenciaCodigoBarras

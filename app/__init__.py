@@ -21,7 +21,8 @@ def create_app():
         Posicao,
         Produto,
         ProdutoEndereco,
-        Usuario
+        Usuario,
+        DivergenciaCodigoBarras
     )
 
     from app.routes.home import home_bp
@@ -36,6 +37,7 @@ def create_app():
     from app.routes.etiqueta import etiqueta_bp
     from app.routes.auth import auth_bp
     from app.routes.usuario import usuario_bp
+    from app.routes.divergencia import divergencia_bp
 
     @app.before_request
     def proteger_area_administrativa():
@@ -103,6 +105,11 @@ def create_app():
     app.register_blueprint(
         usuario_bp,
         url_prefix="/admin/usuarios"
+    )
+
+    app.register_blueprint(
+        divergencia_bp,
+        url_prefix="/admin/divergencias"
     )
 
     with app.app_context():

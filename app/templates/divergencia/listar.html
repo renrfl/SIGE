@@ -1,0 +1,537 @@
+{% extends "base.html" %}
+
+{% block title %}
+Divergências de Código de Barras - SIGE
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="mb-4">
+
+        <h2>
+            Divergências de Código de Barras
+        </h2>
+
+        <p class="text-muted mb-0">
+            Acompanhamento dos códigos de barras dos produtos já endereçados.
+        </p>
+
+    </div>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-2">
+
+            <a
+                href="{{ url_for('divergencia.listar') }}"
+                class="text-decoration-none">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <div class="text-muted">
+                            Todos
+                        </div>
+
+                        <div class="fs-3 fw-bold">
+                            {{ totais["TODOS"] }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </a>
+
+        </div>
+
+        <div class="col-md-2">
+
+            <a
+                href="{{ url_for(
+                    'divergencia.listar',
+                    status='CORRETO'
+                ) }}"
+                class="text-decoration-none">
+
+                <div class="card h-100 border-success">
+
+                    <div class="card-body">
+
+                        <div class="text-success">
+                            Corretos
+                        </div>
+
+                        <div class="fs-3 fw-bold text-success">
+                            {{ totais["CORRETO"] }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </a>
+
+        </div>
+
+        <div class="col-md-2">
+
+            <a
+                href="{{ url_for(
+                    'divergencia.listar',
+                    status='DIVERGENCIA'
+                ) }}"
+                class="text-decoration-none">
+
+                <div class="card h-100 border-danger">
+
+                    <div class="card-body">
+
+                        <div class="text-danger">
+                            Com divergência
+                        </div>
+
+                        <div class="fs-3 fw-bold text-danger">
+                            {{ totais["DIVERGENCIA"] }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </a>
+
+        </div>
+
+        <div class="col-md-2">
+
+            <a
+                href="{{ url_for(
+                    'divergencia.listar',
+                    status='PENDENTE'
+                ) }}"
+                class="text-decoration-none">
+
+                <div class="card h-100 border-warning">
+
+                    <div class="card-body">
+
+                        <div class="text-warning-emphasis">
+                            Pendentes
+                        </div>
+
+                        <div class="fs-3 fw-bold text-warning-emphasis">
+                            {{ totais["PENDENTE"] }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </a>
+
+        </div>
+
+        <div class="col-md-2">
+
+            <a
+                href="{{ url_for(
+                    'divergencia.listar',
+                    status='CORRIGIDO'
+                ) }}"
+                class="text-decoration-none">
+
+                <div class="card h-100 border-primary">
+
+                    <div class="card-body">
+
+                        <div class="text-primary">
+                            Corrigidos
+                        </div>
+
+                        <div class="fs-3 fw-bold text-primary">
+                            {{ totais["CORRIGIDO"] }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </a>
+
+        </div>
+
+        <div class="col-md-2">
+
+            <a
+                href="{{ url_for(
+                    'divergencia.listar',
+                    status='DESCARTADO'
+                ) }}"
+                class="text-decoration-none">
+
+                <div class="card h-100 border-secondary">
+
+                    <div class="card-body">
+
+                        <div class="text-secondary">
+                            Descartados
+                        </div>
+
+                        <div class="fs-3 fw-bold">
+                            {{ totais["DESCARTADO"] }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </a>
+
+        </div>
+
+    </div>
+
+    <form
+        method="GET"
+        action="{{ url_for('divergencia.listar') }}"
+        class="row g-2 mb-4">
+
+        {% if filtro %}
+
+            <input
+                type="hidden"
+                name="status"
+                value="{{ filtro }}">
+
+        {% endif %}
+
+        <div class="col-md-10">
+
+            <input
+                type="text"
+                name="q"
+                class="form-control"
+                value="{{ pesquisa }}"
+                placeholder="Código, descrição ou código de barras">
+
+        </div>
+
+        <div class="col-md-2 d-grid">
+
+            <button
+                type="submit"
+                class="btn btn-primary">
+
+                Pesquisar
+
+            </button>
+
+        </div>
+
+    </form>
+
+    {% if filtro %}
+
+        <div class="mb-3">
+
+            <span class="text-muted">
+                Filtro:
+            </span>
+
+            {% if filtro == "CORRETO" %}
+
+                <span class="badge bg-success">
+                    Corretos
+                </span>
+
+            {% elif filtro == "DIVERGENCIA" %}
+
+                <span class="badge bg-danger">
+                    Com divergência
+                </span>
+
+            {% elif filtro == "PENDENTE" %}
+
+                <span class="badge bg-warning text-dark">
+                    Pendentes
+                </span>
+
+            {% elif filtro == "CORRIGIDO" %}
+
+                <span class="badge bg-primary">
+                    Corrigidos
+                </span>
+
+            {% elif filtro == "DESCARTADO" %}
+
+                <span class="badge bg-secondary">
+                    Descartados
+                </span>
+
+            {% endif %}
+
+            <a
+                href="{{ url_for(
+                    'divergencia.listar'
+                ) }}"
+                class="btn btn-sm btn-outline-secondary ms-2">
+
+                Limpar filtro
+
+            </a>
+
+        </div>
+
+    {% endif %}
+
+    <div class="table-responsive">
+
+        <table class="table table-striped table-hover align-middle">
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Código
+                    </th>
+
+                    <th>
+                        Produto
+                    </th>
+
+                    <th>
+                        Código cadastrado
+                    </th>
+
+                    <th>
+                        Situação atual
+                    </th>
+
+                    <th>
+                        Último código físico
+                    </th>
+
+                    <th>
+                        Histórico
+                    </th>
+
+                    <th class="text-end">
+                        Ações
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for item in itens %}
+
+                    <tr>
+
+                        <td>
+                            {{ item.produto.codigo }}
+                        </td>
+
+                        <td>
+
+                            {{ item.produto.descricao }}
+
+                            {% if not item.produto.ativo %}
+
+                                <span class="badge bg-secondary ms-1">
+                                    Inativo
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            {% if item.produto.codigo_barras %}
+
+                                {{ item.produto.codigo_barras }}
+
+                            {% else %}
+
+                                <span class="text-muted">
+                                    Não informado
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            {% if item.status == "CORRETO" %}
+
+                                <span class="badge bg-success">
+                                    Correto
+                                </span>
+
+                            {% elif item.status == "PENDENTE" %}
+
+                                <span class="badge bg-warning text-dark">
+                                    Pendente
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            {% if item.ultima_divergencia %}
+
+                                {{ item.ultima_divergencia.codigo_barras_fisico }}
+
+                            {% else %}
+
+                                <span class="text-muted">
+                                    —
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            {% if item.ultima_divergencia %}
+
+                                {% if item.ultima_divergencia.status == "PENDENTE" %}
+
+                                    <span class="badge bg-warning text-dark">
+                                        Aguardando WinThor
+                                    </span>
+
+                                {% elif item.ultima_divergencia.status == "CORRIGIDO" %}
+
+                                    <span class="badge bg-primary">
+                                        Corrigido
+                                    </span>
+
+                                {% elif item.ultima_divergencia.status == "DESCARTADO" %}
+
+                                    <span class="badge bg-secondary">
+                                        Descartado
+                                    </span>
+
+                                {% endif %}
+
+                            {% else %}
+
+                                <span class="text-muted">
+                                    Sem divergência
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td class="text-end">
+
+                            {% if item.status != "PENDENTE" %}
+
+                                <a
+                                    href="{{ url_for(
+                                        'divergencia.registrar',
+                                        produto_id=item.produto.id
+                                    ) }}"
+                                    class="btn btn-sm btn-outline-warning">
+
+                                    Registrar divergência
+
+                                </a>
+
+                            {% endif %}
+
+                            {% if (
+                                item.ultima_divergencia
+                                and item.ultima_divergencia.status == "PENDENTE"
+                            ) %}
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for(
+                                        'divergencia.descartar',
+                                        id=item.ultima_divergencia.id
+                                    ) }}"
+                                    class="d-inline">
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm(
+                                            'Deseja descartar esta divergência?'
+                                        );">
+
+                                        Descartar
+
+                                    </button>
+
+                                </form>
+
+                            {% endif %}
+
+                            {% if (
+                                item.ultima_divergencia
+                                and item.ultima_divergencia.status == "DESCARTADO"
+                            ) %}
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for(
+                                        'divergencia.reabrir',
+                                        id=item.ultima_divergencia.id
+                                    ) }}"
+                                    class="d-inline">
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-sm btn-outline-secondary">
+
+                                        Reabrir
+
+                                    </button>
+
+                                </form>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                {% else %}
+
+                    <tr>
+
+                        <td
+                            colspan="7"
+                            class="text-center text-muted py-4">
+
+                            Nenhum produto encontrado para este filtro.
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}
