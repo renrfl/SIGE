@@ -142,11 +142,13 @@
             line-height: 1;
         }
 
-        .deposito {
+        .nome-nivel {
             font-size: 15pt;
             font-weight: bold;
             writing-mode: vertical-rl;
             transform: rotate(180deg);
+            max-height: 38mm;
+            overflow: hidden;
         }
 
         @media screen {
@@ -286,8 +288,8 @@
 
                         {% else %}
 
-                            <div class="deposito">
-                                DEPÓSITO
+                            <div class="nome-nivel">
+                                {{ item.endereco.posicao.nivel.nome }}
                             </div>
 
                         {% endif %}

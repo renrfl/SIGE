@@ -49,6 +49,144 @@ Módulos
 
     {% endwith %}
 
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Filtros
+        </div>
+
+        <div class="card-body">
+
+            <form
+                method="GET"
+                action="{{ url_for('modulo.listar') }}"
+                class="row g-3 align-items-end">
+
+                <div class="col-md-5">
+
+                    <label
+                        for="rua_id"
+                        class="form-label">
+
+                        Rua
+
+                    </label>
+
+                    <select
+                        class="form-select"
+                        id="rua_id"
+                        name="rua_id"
+                        onchange="this.form.submit()">
+
+                        <option value="">
+                            Todas as ruas
+                        </option>
+
+                        {% for rua in ruas %}
+
+                            <option
+                                value="{{ rua.id }}"
+                                {% if rua_id == rua.id %}
+                                    selected
+                                {% endif %}>
+
+                                {{ rua.nome }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-5">
+
+                    <label
+                        for="predio_id"
+                        class="form-label">
+
+                        Prédio
+
+                    </label>
+
+                    <select
+                        class="form-select"
+                        id="predio_id"
+                        name="predio_id">
+
+                        <option value="">
+                            Todos os prédios
+                        </option>
+
+                        {% for predio in predios %}
+
+                            <option
+                                value="{{ predio.id }}"
+                                {% if predio_id == predio.id %}
+                                    selected
+                                {% endif %}>
+
+                                {{ predio.nome }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-2 d-grid">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary">
+
+                        Filtrar
+
+                    </button>
+
+                </div>
+
+            </form>
+
+            {% if rua_id or predio_id %}
+
+                <div class="mt-3">
+
+                    <a
+                        href="{{ url_for('modulo.listar') }}"
+                        class="btn btn-sm btn-outline-secondary">
+
+                        Limpar filtros
+
+                    </a>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <div class="mb-3">
+
+        <span class="text-muted">
+
+            Total exibido:
+
+            <strong>
+                {{ modulos|length }}
+            </strong>
+
+            módulo(s)
+
+        </span>
+
+    </div>
+
     <div class="table-responsive">
 
         <table class="table table-bordered table-hover align-middle">
@@ -130,7 +268,10 @@ Módulos
                             <div class="d-flex flex-wrap gap-2">
 
                                 <a
-                                    href="{{ url_for('modulo.editar', id=modulo.id) }}"
+                                    href="{{ url_for(
+                                        'modulo.editar',
+                                        id=modulo.id
+                                    ) }}"
                                     class="btn btn-warning btn-sm">
 
                                     Editar
@@ -139,17 +280,26 @@ Módulos
 
                                 <form
                                     method="POST"
-                                    action="{{ url_for('modulo.alternar_status', id=modulo.id) }}">
+                                    action="{{ url_for(
+                                        'modulo.alternar_status',
+                                        id=modulo.id
+                                    ) }}">
 
                                     <button
                                         type="submit"
                                         class="btn btn-sm {% if modulo.ativo %}btn-secondary{% else %}btn-success{% endif %}"
-                                        onclick="return confirm('{% if modulo.ativo %}Deseja inativar este módulo, seus níveis e suas posições?{% else %}Deseja ativar este módulo, seus níveis e suas posições?{% endif %}')">
+                                        onclick="return confirm(
+                                            '{% if modulo.ativo %}Deseja inativar este módulo, seus níveis e suas posições?{% else %}Deseja ativar este módulo, seus níveis e suas posições?{% endif %}'
+                                        )">
 
                                         {% if modulo.ativo %}
+
                                             Inativar
+
                                         {% else %}
+
                                             Ativar
+
                                         {% endif %}
 
                                     </button>
@@ -170,7 +320,7 @@ Módulos
                             colspan="6"
                             class="text-center">
 
-                            Nenhum módulo cadastrado.
+                            Nenhum módulo encontrado para os filtros selecionados.
 
                         </td>
 

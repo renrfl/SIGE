@@ -438,6 +438,21 @@ Divergências de Código de Barras - SIGE
 
                         <td class="text-end">
 
+                            {% if item.ultima_divergencia %}
+
+                                <a
+                                    href="{{ url_for(
+                                        'divergencia.detalhes',
+                                        id=item.ultima_divergencia.id
+                                    ) }}"
+                                    class="btn btn-sm btn-outline-primary">
+
+                                    Ver detalhes
+
+                                </a>
+
+                            {% endif %}
+
                             {% if item.status != "PENDENTE" %}
 
                                 <a

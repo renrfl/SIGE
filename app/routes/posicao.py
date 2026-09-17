@@ -1,7 +1,14 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app import db
-from app.models import Nivel, Posicao, ProdutoEndereco
+from app.models import (
+    Modulo,
+    Nivel,
+    Posicao,
+    Predio,
+    ProdutoEndereco,
+    Rua
+)
 
 
 posicao_bp = Blueprint(
@@ -49,7 +56,154 @@ def obter_destino_retorno():
 @posicao_bp.route("/")
 def listar():
 
-    posicoes = Posicao.query.order_by(
+    rua_id = request.args.get(
+        "rua_id",
+        type=int
+    )
+
+    predio_id = request.args.get(
+        "predio_id",
+        type=int
+    )
+
+    modulo_id = request.args.get(
+        "modulo_id",
+        type=int
+    )
+
+    nivel_id = request.args.get(
+        "nivel_id",
+        type=int
+    )
+
+    ruas = Rua.query.filter_by(
+        ativo=True
+    ).order_by(
+        Rua.nome
+    ).all()
+
+    predios_query = Predio.query.filter_by(
+        ativo=True
+    )
+
+    if rua_id:
+
+        predios_query = predios_query.filter_by(
+            rua_id=rua_id
+        )
+
+    predios = predios_query.order_by(
+        Predio.nome
+    ).all()
+
+    modulos_query = Modulo.query.filter_by(
+        ativo=True
+    )
+
+    if predio_id:
+
+        modulos_query = modulos_query.filter_by(
+            predio_id=predio_id
+        )
+
+    elif rua_id:
+
+        modulos_query = (
+            modulos_query
+            .join(
+                Predio
+            )
+            .filter(
+                Predio.rua_id == rua_id
+            )
+        )
+
+    modulos = modulos_query.order_by(
+        Modulo.nome
+    ).all()
+
+    niveis_query = Nivel.query.filter_by(
+        ativo=True
+    )
+
+    if modulo_id:
+
+        niveis_query = niveis_query.filter_by(
+            modulo_id=modulo_id
+        )
+
+    elif predio_id:
+
+        niveis_query = (
+            niveis_query
+            .join(
+                Modulo
+            )
+            .filter(
+                Modulo.predio_id == predio_id
+            )
+        )
+
+    elif rua_id:
+
+        niveis_query = (
+            niveis_query
+            .join(
+                Modulo
+            )
+            .join(
+                Predio
+            )
+            .filter(
+                Predio.rua_id == rua_id
+            )
+        )
+
+    niveis = niveis_query.order_by(
+        Nivel.nome
+    ).all()
+
+    posicoes_query = (
+        Posicao.query
+        .join(
+            Nivel
+        )
+        .join(
+            Modulo
+        )
+        .join(
+            Predio
+        )
+    )
+
+    if rua_id:
+
+        posicoes_query = posicoes_query.filter(
+            Predio.rua_id == rua_id
+        )
+
+    if predio_id:
+
+        posicoes_query = posicoes_query.filter(
+            Modulo.predio_id == predio_id
+        )
+
+    if modulo_id:
+
+        posicoes_query = posicoes_query.filter(
+            Nivel.modulo_id == modulo_id
+        )
+
+    if nivel_id:
+
+        posicoes_query = posicoes_query.filter(
+            Posicao.nivel_id == nivel_id
+        )
+
+    posicoes = posicoes_query.order_by(
+        Predio.nome,
+        Modulo.nome,
+        Nivel.nome,
         Posicao.nome
     ).all()
 
@@ -73,7 +227,15 @@ def listar():
 
     return render_template(
         "posicao/listar.html",
-        posicoes=posicoes
+        posicoes=posicoes,
+        ruas=ruas,
+        predios=predios,
+        modulos=modulos,
+        niveis=niveis,
+        rua_id=rua_id,
+        predio_id=predio_id,
+        modulo_id=modulo_id,
+        nivel_id=nivel_id
     )
 
 

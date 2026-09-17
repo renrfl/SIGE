@@ -1,0 +1,463 @@
+{% extends "base.html" %}
+
+{% block title %}
+Detalhes da Divergência - SIGE
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="mb-1">
+                Detalhes da Divergência
+            </h2>
+
+            <p class="text-muted mb-0">
+                Consulta das informações registradas para correção do produto.
+            </p>
+
+        </div>
+
+        <a
+            href="{{ url_for('divergencia.listar') }}"
+            class="btn btn-outline-secondary">
+
+            Voltar
+
+        </a>
+
+    </div>
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Produto
+        </div>
+
+        <div class="card-body">
+
+            <div class="row g-3">
+
+                <div class="col-md-3">
+
+                    <div class="text-muted small">
+                        Código interno
+                    </div>
+
+                    <div class="fw-semibold">
+                        {{ divergencia.produto.codigo }}
+                    </div>
+
+                </div>
+
+                <div class="col-md-9">
+
+                    <div class="text-muted small">
+                        Descrição
+                    </div>
+
+                    <div class="fw-semibold">
+                        {{ divergencia.produto.descricao }}
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Códigos de barras
+        </div>
+
+        <div class="card-body">
+
+            <div class="row g-3">
+
+                <div class="col-md-6">
+
+                    <div class="text-muted small">
+                        Código cadastrado no momento da divergência
+                    </div>
+
+                    <div class="fw-semibold">
+
+                        {% if divergencia.codigo_barras_cadastrado %}
+
+                            {{ divergencia.codigo_barras_cadastrado }}
+
+                        {% else %}
+
+                            <span class="text-muted">
+                                Não informado
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <div class="text-muted small">
+                        Código físico encontrado
+                    </div>
+
+                    <div class="fw-semibold">
+                        {{ divergencia.codigo_barras_fisico }}
+                    </div>
+
+                </div>
+
+            </div>
+
+            <hr>
+
+            <div>
+
+                <div class="text-muted small">
+                    Código atualmente cadastrado no SIGE
+                </div>
+
+                <div class="fw-semibold">
+
+                    {% if divergencia.produto.codigo_barras %}
+
+                        {{ divergencia.produto.codigo_barras }}
+
+                    {% else %}
+
+                        <span class="text-muted">
+                            Não informado
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Situação
+        </div>
+
+        <div class="card-body">
+
+            {% if divergencia.status == "PENDENTE" %}
+
+                <span class="badge bg-warning text-dark fs-6">
+                    Pendente
+                </span>
+
+                <p class="text-muted mt-3 mb-0">
+                    Aguardando que o código físico registrado
+                    seja recebido novamente através da importação
+                    de produtos do WinThor.
+                </p>
+
+            {% elif divergencia.status == "CORRIGIDO" %}
+
+                <span class="badge bg-success fs-6">
+                    Corrigido
+                </span>
+
+                <p class="text-muted mt-3 mb-0">
+                    O código recebido através da importação do WinThor
+                    corresponde ao código físico registrado nesta divergência.
+                </p>
+
+            {% elif divergencia.status == "DESCARTADO" %}
+
+                <span class="badge bg-secondary fs-6">
+                    Descartado
+                </span>
+
+                <p class="text-muted mt-3 mb-0">
+                    Este registro foi descartado manualmente.
+                </p>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Observação
+        </div>
+
+        <div class="card-body">
+
+            {% if divergencia.observacao %}
+
+                <div style="white-space: pre-wrap;">
+                    {{ divergencia.observacao }}
+                </div>
+
+            {% else %}
+
+                <span class="text-muted">
+                    Nenhuma observação registrada.
+                </span>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Registro
+        </div>
+
+        <div class="card-body">
+
+            <div class="row g-3">
+
+                <div class="col-md-4">
+
+                    <div class="text-muted small">
+                        Registrado por
+                    </div>
+
+                    <div class="fw-semibold">
+
+                        {% if divergencia.usuario %}
+
+                            {{ divergencia.usuario.nome }}
+
+                        {% else %}
+
+                            <span class="text-muted">
+                                Usuário não identificado
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <div class="text-muted small">
+                        Data do registro
+                    </div>
+
+                    <div class="fw-semibold">
+
+                        {% if divergencia.data_registro %}
+
+                            {{ divergencia.data_registro.strftime(
+                                "%d/%m/%Y %H:%M"
+                            ) }}
+
+                        {% else %}
+
+                            —
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <div class="text-muted small">
+                        Última atualização
+                    </div>
+
+                    <div class="fw-semibold">
+
+                        {% if divergencia.data_atualizacao %}
+
+                            {{ divergencia.data_atualizacao.strftime(
+                                "%d/%m/%Y %H:%M"
+                            ) }}
+
+                        {% else %}
+
+                            —
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Localização física
+        </div>
+
+        <div class="card-body">
+
+            {% if endereco and endereco.posicao %}
+
+                <div class="row g-3">
+
+                    <div class="col-md-2">
+
+                        <div class="text-muted small">
+                            Rua
+                        </div>
+
+                        <div class="fw-semibold">
+                            {{ endereco.posicao.nivel.modulo.predio.rua.nome }}
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-2">
+
+                        <div class="text-muted small">
+                            Prédio
+                        </div>
+
+                        <div class="fw-semibold">
+                            {{ endereco.posicao.nivel.modulo.predio.nome }}
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-2">
+
+                        <div class="text-muted small">
+                            Módulo
+                        </div>
+
+                        <div class="fw-semibold">
+                            {{ endereco.posicao.nivel.modulo.nome }}
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-2">
+
+                        <div class="text-muted small">
+                            Nível
+                        </div>
+
+                        <div class="fw-semibold">
+                            {{ endereco.posicao.nivel.nome }}
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-2">
+
+                        <div class="text-muted small">
+                            Posição
+                        </div>
+
+                        <div class="fw-semibold">
+                            {{ endereco.posicao.nome }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% else %}
+
+                <span class="text-muted">
+                    O produto não possui endereço físico atualmente.
+                </span>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <div class="d-flex justify-content-between mb-4">
+
+        <a
+            href="{{ url_for('divergencia.listar') }}"
+            class="btn btn-outline-secondary">
+
+            Voltar para divergências
+
+        </a>
+
+        <div>
+
+            {% if divergencia.status == "PENDENTE" %}
+
+                <form
+                    method="POST"
+                    action="{{ url_for(
+                        'divergencia.descartar',
+                        id=divergencia.id
+                    ) }}"
+                    class="d-inline">
+
+                    <button
+                        type="submit"
+                        class="btn btn-outline-danger"
+                        onclick="return confirm(
+                            'Deseja descartar esta divergência?'
+                        );">
+
+                        Descartar divergência
+
+                    </button>
+
+                </form>
+
+            {% elif divergencia.status == "DESCARTADO" %}
+
+                <form
+                    method="POST"
+                    action="{{ url_for(
+                        'divergencia.reabrir',
+                        id=divergencia.id
+                    ) }}"
+                    class="d-inline">
+
+                    <button
+                        type="submit"
+                        class="btn btn-outline-warning">
+
+                        Reabrir divergência
+
+                    </button>
+
+                </form>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

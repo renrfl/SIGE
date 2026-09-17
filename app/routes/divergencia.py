@@ -262,6 +262,34 @@ def listar():
 
 
 @divergencia_bp.route(
+    "/<int:id>"
+)
+def detalhes(id):
+
+    divergencia = (
+        DivergenciaCodigoBarras.query
+        .get_or_404(id)
+    )
+
+    endereco = (
+        ProdutoEndereco.query
+        .filter_by(
+            produto_id=divergencia.produto_id
+        )
+        .order_by(
+            ProdutoEndereco.id.desc()
+        )
+        .first()
+    )
+
+    return render_template(
+        "divergencia/detalhes.html",
+        divergencia=divergencia,
+        endereco=endereco
+    )
+
+
+@divergencia_bp.route(
     "/registrar/<int:produto_id>",
     methods=["GET", "POST"]
 )

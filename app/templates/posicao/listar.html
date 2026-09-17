@@ -49,6 +49,220 @@ Posições
 
     {% endwith %}
 
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Filtros
+        </div>
+
+        <div class="card-body">
+
+            <form
+                method="GET"
+                action="{{ url_for('posicao.listar') }}"
+                class="row g-3 align-items-end">
+
+                <div class="col-md-3">
+
+                    <label
+                        for="rua_id"
+                        class="form-label">
+
+                        Rua
+
+                    </label>
+
+                    <select
+                        class="form-select"
+                        id="rua_id"
+                        name="rua_id"
+                        onchange="this.form.submit()">
+
+                        <option value="">
+                            Todas as ruas
+                        </option>
+
+                        {% for rua in ruas %}
+
+                            <option
+                                value="{{ rua.id }}"
+                                {% if rua_id == rua.id %}
+                                    selected
+                                {% endif %}>
+
+                                {{ rua.nome }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <label
+                        for="predio_id"
+                        class="form-label">
+
+                        Prédio
+
+                    </label>
+
+                    <select
+                        class="form-select"
+                        id="predio_id"
+                        name="predio_id"
+                        onchange="this.form.submit()">
+
+                        <option value="">
+                            Todos os prédios
+                        </option>
+
+                        {% for predio in predios %}
+
+                            <option
+                                value="{{ predio.id }}"
+                                {% if predio_id == predio.id %}
+                                    selected
+                                {% endif %}>
+
+                                {{ predio.nome }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <label
+                        for="modulo_id"
+                        class="form-label">
+
+                        Módulo
+
+                    </label>
+
+                    <select
+                        class="form-select"
+                        id="modulo_id"
+                        name="modulo_id"
+                        onchange="this.form.submit()">
+
+                        <option value="">
+                            Todos os módulos
+                        </option>
+
+                        {% for modulo in modulos %}
+
+                            <option
+                                value="{{ modulo.id }}"
+                                {% if modulo_id == modulo.id %}
+                                    selected
+                                {% endif %}>
+
+                                {{ modulo.nome }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <label
+                        for="nivel_id"
+                        class="form-label">
+
+                        Nível
+
+                    </label>
+
+                    <select
+                        class="form-select"
+                        id="nivel_id"
+                        name="nivel_id">
+
+                        <option value="">
+                            Todos os níveis
+                        </option>
+
+                        {% for nivel in niveis %}
+
+                            <option
+                                value="{{ nivel.id }}"
+                                {% if nivel_id == nivel.id %}
+                                    selected
+                                {% endif %}>
+
+                                {{ nivel.nome }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-2 d-grid">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary">
+
+                        Filtrar
+
+                    </button>
+
+                </div>
+
+            </form>
+
+            {% if rua_id or predio_id or modulo_id or nivel_id %}
+
+                <div class="mt-3">
+
+                    <a
+                        href="{{ url_for('posicao.listar') }}"
+                        class="btn btn-sm btn-outline-secondary">
+
+                        Limpar filtros
+
+                    </a>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <div class="mb-3">
+
+        <span class="text-muted">
+
+            Total exibido:
+
+            <strong>
+                {{ posicoes|length }}
+            </strong>
+
+            posição(ões)
+
+        </span>
+
+    </div>
+
     <div class="table-responsive">
 
         <table class="table table-bordered table-hover align-middle">
@@ -168,7 +382,10 @@ Posições
                             <div class="d-flex flex-wrap gap-2">
 
                                 <a
-                                    href="{{ url_for('posicao.editar', id=posicao.id) }}"
+                                    href="{{ url_for(
+                                        'posicao.editar',
+                                        id=posicao.id
+                                    ) }}"
                                     class="btn btn-warning btn-sm">
 
                                     Editar
@@ -177,17 +394,26 @@ Posições
 
                                 <form
                                     method="POST"
-                                    action="{{ url_for('posicao.alternar_status', id=posicao.id) }}">
+                                    action="{{ url_for(
+                                        'posicao.alternar_status',
+                                        id=posicao.id
+                                    ) }}">
 
                                     <button
                                         type="submit"
                                         class="btn btn-sm {% if posicao.ativo %}btn-secondary{% else %}btn-success{% endif %}"
-                                        onclick="return confirm('{% if posicao.ativo %}Deseja inativar esta posição?{% else %}Deseja ativar esta posição?{% endif %}')">
+                                        onclick="return confirm(
+                                            '{% if posicao.ativo %}Deseja inativar esta posição?{% else %}Deseja ativar esta posição?{% endif %}'
+                                        )">
 
                                         {% if posicao.ativo %}
+
                                             Inativar
+
                                         {% else %}
+
                                             Ativar
+
                                         {% endif %}
 
                                     </button>
@@ -198,12 +424,17 @@ Posições
 
                                     <form
                                         method="POST"
-                                        action="{{ url_for('posicao.excluir', id=posicao.id) }}">
+                                        action="{{ url_for(
+                                            'posicao.excluir',
+                                            id=posicao.id
+                                        ) }}">
 
                                         <button
                                             type="submit"
                                             class="btn btn-danger btn-sm"
-                                            onclick="return confirm('Deseja excluir definitivamente esta posição vazia?')">
+                                            onclick="return confirm(
+                                                'Deseja excluir definitivamente esta posição vazia?'
+                                            )">
 
                                             Excluir
 
@@ -239,7 +470,7 @@ Posições
                             colspan="9"
                             class="text-center">
 
-                            Nenhuma posição cadastrada.
+                            Nenhuma posição encontrada para os filtros selecionados.
 
                         </td>
 

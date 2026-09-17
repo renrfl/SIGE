@@ -1,7 +1,7 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app import db
-from app.models import Modulo, Predio
+from app.models import Modulo, Predio, Rua
 
 
 modulo_bp = Blueprint(
@@ -31,13 +31,64 @@ def preparar_predios():
 @modulo_bp.route("/")
 def listar():
 
-    modulos = Modulo.query.order_by(
+    rua_id = request.args.get(
+        "rua_id",
+        type=int
+    )
+
+    predio_id = request.args.get(
+        "predio_id",
+        type=int
+    )
+
+    ruas = Rua.query.filter_by(
+        ativo=True
+    ).order_by(
+        Rua.nome
+    ).all()
+
+    predios_query = Predio.query.filter_by(
+        ativo=True
+    )
+
+    if rua_id:
+
+        predios_query = predios_query.filter_by(
+            rua_id=rua_id
+        )
+
+    predios = predios_query.order_by(
+        Predio.nome
+    ).all()
+
+    modulos_query = Modulo.query.join(
+        Predio
+    )
+
+    if rua_id:
+
+        modulos_query = modulos_query.filter(
+            Predio.rua_id == rua_id
+        )
+
+    if predio_id:
+
+        modulos_query = modulos_query.filter(
+            Modulo.predio_id == predio_id
+        )
+
+    modulos = modulos_query.order_by(
+        Predio.nome,
         Modulo.nome
     ).all()
 
     return render_template(
         "modulo/listar.html",
-        modulos=modulos
+        modulos=modulos,
+        ruas=ruas,
+        predios=predios,
+        rua_id=rua_id,
+        predio_id=predio_id
     )
 
 
