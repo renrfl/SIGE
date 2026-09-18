@@ -63,6 +63,117 @@ def normalizar_texto(texto):
     return texto.strip()
 
 
+def normalizar_atalho(texto):
+
+    texto = texto.upper()
+
+    texto = re.sub(
+        r"[^A-Z0-9]",
+        "",
+        texto
+    )
+
+    return texto
+
+
+def extrair_numero_nome(nome, prefixo):
+
+    nome_normalizado = normalizar_texto(
+        nome
+    )
+
+    padrao = (
+        rf"^{re.escape(prefixo)}\s+(\d+)$"
+    )
+
+    resultado = re.match(
+        padrao,
+        nome_normalizado
+    )
+
+    if not resultado:
+        return None
+
+    return resultado.group(1)
+
+
+def gerar_atalho_posicao(posicao):
+
+    rua = posicao.nivel.modulo.predio.rua.nome
+    predio = posicao.nivel.modulo.predio.nome
+    modulo = posicao.nivel.modulo.nome
+    nivel = posicao.nivel.nome
+    posicao_nome = posicao.nome
+
+    numero_rua = extrair_numero_nome(
+        rua,
+        "RUA"
+    )
+
+    numero_deposito = extrair_numero_nome(
+        rua,
+        "DEPOSITO"
+    )
+
+    numero_predio = extrair_numero_nome(
+        predio,
+        "PREDIO"
+    )
+
+    numero_modulo = extrair_numero_nome(
+        modulo,
+        "MODULO"
+    )
+
+    numero_nivel = extrair_numero_nome(
+        nivel,
+        "NIVEL"
+    )
+
+    numero_posicao = extrair_numero_nome(
+        posicao_nome,
+        "POSICAO"
+    )
+
+    if numero_rua:
+
+        inicio = f"R{numero_rua}"
+
+    elif numero_deposito:
+
+        inicio = f"D{numero_deposito}"
+
+    else:
+
+        return None
+
+    partes = [
+        inicio
+    ]
+
+    if numero_predio:
+        partes.append(
+            f"PR{numero_predio}"
+        )
+
+    if numero_modulo:
+        partes.append(
+            f"M{numero_modulo}"
+        )
+
+    if numero_nivel:
+        partes.append(
+            f"N{numero_nivel}"
+        )
+
+    if numero_posicao:
+        partes.append(
+            f"PS{numero_posicao}"
+        )
+
+    return "".join(partes)
+
+
 def preparar_opcoes_formulario():
 
     produtos = Produto.query.filter_by(
@@ -244,6 +355,10 @@ def buscar_posicoes():
         termo
     )
 
+    termo_atalho = normalizar_atalho(
+        termo
+    )
+
     posicoes = Posicao.query.filter_by(
         ativo=True
     ).all()
@@ -260,7 +375,26 @@ def buscar_posicoes():
             endereco_formatado
         )
 
-        if termo_normalizado not in endereco_normalizado:
+        atalho_posicao = gerar_atalho_posicao(
+            posicao
+        )
+
+        corresponde_busca_normal = (
+            termo_normalizado
+            in endereco_normalizado
+        )
+
+        corresponde_atalho = (
+            atalho_posicao is not None
+            and atalho_posicao.startswith(
+                termo_atalho
+            )
+        )
+
+        if (
+            not corresponde_busca_normal
+            and not corresponde_atalho
+        ):
             continue
 
         ocupacao = ProdutoEndereco.query.filter_by(

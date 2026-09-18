@@ -1,4 +1,6 @@
 import os
+from datetime import timedelta
+
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -31,6 +33,10 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     SESSION_PERMANENT = False
+
+    PERMANENT_SESSION_LIFETIME = timedelta(
+        minutes=30
+    )
 
     SESSION_COOKIE_HTTPONLY = True
 
