@@ -241,6 +241,14 @@ Novo Endereçamento
 
             </label>
 
+            <div class="form-text mb-2">
+
+                Digite pelo menos dois caracteres.
+                Você pode pesquisar por Rua, Prédio, Módulo, Nível,
+                Posição, AVARIA ou DEPOSITO.
+
+            </div>
+
             <input
                 type="hidden"
                 id="posicao_id"
@@ -255,14 +263,6 @@ Novo Endereçamento
                 placeholder="Ex.: RUA 1 PREDIO 2 MODULO 1, AVARIA ou DEPOSITO"
                 value="{%- for posicao in posicoes -%}{%- if posicao_id_selecionada == posicao.id -%}{{ posicao.nivel.modulo.predio.rua.nome }} → {{ posicao.nivel.modulo.predio.nome }} → {{ posicao.nivel.modulo.nome }} → {{ posicao.nivel.nome }} → {{ posicao.nome }}{%- endif -%}{%- endfor -%}"
                 required>
-
-            <div class="form-text">
-
-                Digite pelo menos dois caracteres.
-                Você pode pesquisar por Rua, Prédio, Módulo, Nível,
-                Posição, AVARIA ou DEPOSITO.
-
-            </div>
 
             <div
                 id="mensagem-posicao"
@@ -345,13 +345,15 @@ Novo Endereçamento
 
         </div>
 
+        <div class="d-flex gap-2 pb-4">
+
         {% if conflito %}
 
             <button
                 type="submit"
                 name="confirmar_substituicao"
                 value="sim"
-                class="btn btn-danger"
+                class="btn btn-danger flex-fill"
                 onclick="return confirm('Confirma a retirada do produto atual e a substituição nesta posição?')">
 
                 Confirmar substituição
@@ -362,7 +364,7 @@ Novo Endereçamento
 
                 <a
                     href="{{ url_for('endereco.editar', id=endereco.id) }}"
-                    class="btn btn-secondary">
+                    class="btn btn-secondary flex-fill">
 
                     Cancelar substituição
 
@@ -372,7 +374,7 @@ Novo Endereçamento
 
                 <a
                     href="{{ url_for('endereco.novo') }}"
-                    class="btn btn-secondary">
+                    class="btn btn-secondary flex-fill">
 
                     Cancelar substituição
 
@@ -384,7 +386,7 @@ Novo Endereçamento
 
             <button
                 type="submit"
-                class="btn btn-success">
+                class="btn btn-success flex-fill">
 
                 Salvar
 
@@ -392,13 +394,15 @@ Novo Endereçamento
 
             <a
                 href="{{ url_for('endereco.listar') }}"
-                class="btn btn-secondary">
+                class="btn btn-secondary flex-fill">
 
                 Cancelar
 
             </a>
 
         {% endif %}
+
+        </div>
 
     </form>
 
@@ -1033,6 +1037,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
+    const dispositivoTouch =
+        window.matchMedia("(pointer: coarse)").matches
+        || navigator.maxTouchPoints > 0;
+
     document.addEventListener("click", function (evento) {
 
         if (
@@ -1045,7 +1053,8 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (
-            !resultadosPosicoes.contains(evento.target)
+            !dispositivoTouch
+            && !resultadosPosicoes.contains(evento.target)
             && evento.target !== campoPesquisaPosicao
         ) {
 
