@@ -1,7 +1,20 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for
+)
 
 from app import db
-from app.models import Modulo, Nivel
+from app.models import (
+    Modulo,
+    Nivel,
+    ProdutoEndereco,
+    Usuario
+)
 
 
 nivel_bp = Blueprint(
@@ -349,6 +362,174 @@ def alternar_status(id):
             ),
             "success"
         )
+
+    return redirect(
+        url_for(
+            "nivel.listar"
+        )
+    )
+
+
+@nivel_bp.route(
+    "/excluir/<int:id>",
+    methods=["POST"]
+)
+def excluir(id):
+
+    if session.get("usuario_perfil") != "ADMINISTRADOR":
+
+        flash(
+            "Apenas administradores podem excluir níveis.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "nivel.listar"
+            )
+        )
+
+    nivel = Nivel.query.get_or_404(
+        id
+    )
+
+    posicoes = list(
+        nivel.posicoes
+    )
+
+    if not posicoes:
+
+        db.session.delete(
+            nivel
+        )
+
+        db.session.commit()
+
+        flash(
+            "Nível vazio excluído com sucesso.",
+            "success"
+        )
+
+        return redirect(
+            url_for(
+                "nivel.listar"
+            )
+        )
+
+    posicoes_ids = [
+        posicao.id
+        for posicao in posicoes
+    ]
+
+    endereco = ProdutoEndereco.query.filter(
+        ProdutoEndereco.posicao_id.in_(
+            posicoes_ids
+        )
+    ).first()
+
+    if endereco:
+
+        flash(
+            (
+                "Não é possível excluir este nível porque existe "
+                "pelo menos um produto endereçado em uma de suas "
+                "posições. Remova ou transfira os endereçamentos "
+                "antes de continuar."
+            ),
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "nivel.listar"
+            )
+        )
+
+    senha = request.form.get(
+        "senha",
+        ""
+    )
+
+    if not senha:
+
+        flash(
+            (
+                "Este nível possui posições cadastradas. "
+                "Informe sua senha de administrador para confirmar "
+                "a exclusão da estrutura."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "nivel.listar"
+            )
+        )
+
+    usuario = Usuario.query.get(
+        session.get("usuario_id")
+    )
+
+    if (
+        not usuario
+        or not usuario.ativo
+        or usuario.perfil != "ADMINISTRADOR"
+        or not usuario.verificar_senha(senha)
+    ):
+
+        flash(
+            "Senha de administrador incorreta.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "nivel.listar"
+            )
+        )
+
+    quantidade_posicoes = len(
+        posicoes
+    )
+
+    try:
+
+        for posicao in posicoes:
+
+            db.session.delete(
+                posicao
+            )
+
+        db.session.delete(
+            nivel
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        flash(
+            "Não foi possível excluir a estrutura do nível.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "nivel.listar"
+            )
+        )
+
+    flash(
+        (
+            "Estrutura excluída com sucesso. "
+            f"Foram excluídas {quantidade_posicoes} posição(ões) "
+            "e o nível selecionado."
+        ),
+        "success"
+    )
 
     return redirect(
         url_for(

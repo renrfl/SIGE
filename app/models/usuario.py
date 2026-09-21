@@ -30,6 +30,12 @@ class Usuario(db.Model):
         nullable=False
     )
 
+    perfil = db.Column(
+        db.String(20),
+        nullable=False,
+        default="OPERADOR"
+    )
+
     ativo = db.Column(
         db.Boolean,
         default=True

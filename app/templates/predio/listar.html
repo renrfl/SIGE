@@ -73,7 +73,7 @@ Prédios
                         Status
                     </th>
 
-                    <th width="220">
+                    <th width="320">
                         Ações
                     </th>
 
@@ -148,11 +148,211 @@ Prédios
 
                                 </form>
 
+                                {% if session.get("usuario_perfil") == "ADMINISTRADOR" %}
+
+                                    {% if not predio.modulos %}
+
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for('predio.excluir', id=predio.id) }}">
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-danger btn-sm"
+                                                onclick="return confirm('Deseja realmente excluir este prédio? Esta ação não poderá ser desfeita.')">
+
+                                                Excluir
+
+                                            </button>
+
+                                        </form>
+
+                                    {% else %}
+
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-danger btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalExcluirPredio{{ predio.id }}">
+
+                                            Excluir estrutura
+
+                                        </button>
+
+                                    {% endif %}
+
+                                {% endif %}
+
                             </div>
 
                         </td>
 
                     </tr>
+
+                    {% if
+                        session.get("usuario_perfil") == "ADMINISTRADOR"
+                        and predio.modulos
+                    %}
+
+                        {% set totais = namespace(
+                            niveis=0,
+                            posicoes=0
+                        ) %}
+
+                        {% for modulo in predio.modulos %}
+
+                            {% set totais.niveis =
+                                totais.niveis + modulo.niveis|length
+                            %}
+
+                            {% for nivel in modulo.niveis %}
+
+                                {% set totais.posicoes =
+                                    totais.posicoes + nivel.posicoes|length
+                                %}
+
+                            {% endfor %}
+
+                        {% endfor %}
+
+                        <div
+                            class="modal fade"
+                            id="modalExcluirPredio{{ predio.id }}"
+                            tabindex="-1"
+                            aria-labelledby="modalExcluirPredioLabel{{ predio.id }}"
+                            aria-hidden="true">
+
+                            <div class="modal-dialog modal-dialog-centered">
+
+                                <div class="modal-content">
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('predio.excluir', id=predio.id) }}">
+
+                                        <div class="modal-header">
+
+                                            <h5
+                                                class="modal-title"
+                                                id="modalExcluirPredioLabel{{ predio.id }}">
+
+                                                Excluir estrutura
+
+                                            </h5>
+
+                                            <button
+                                                type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal"
+                                                aria-label="Fechar">
+                                            </button>
+
+                                        </div>
+
+                                        <div class="modal-body">
+
+                                            <div class="alert alert-danger">
+
+                                                <strong>Atenção!</strong>
+
+                                                <div class="mt-2">
+
+                                                    Esta operação excluirá permanentemente:
+
+                                                </div>
+
+                                                <ul class="mb-0 mt-2">
+
+                                                    <li>
+                                                        o prédio
+                                                        <strong>{{ predio.nome }}</strong>;
+                                                    </li>
+
+                                                    <li>
+                                                        {{ predio.modulos|length }}
+                                                        módulo(s);
+                                                    </li>
+
+                                                    <li>
+                                                        {{ totais.niveis }}
+                                                        nível(is);
+                                                    </li>
+
+                                                    <li>
+                                                        {{ totais.posicoes }}
+                                                        posição(ões).
+                                                    </li>
+
+                                                </ul>
+
+                                            </div>
+
+                                            <p>
+
+                                                A exclusão somente será permitida se
+                                                <strong>nenhuma posição desta estrutura possuir produto endereçado</strong>.
+
+                                            </p>
+
+                                            <div class="mb-3">
+
+                                                <label
+                                                    for="senhaPredio{{ predio.id }}"
+                                                    class="form-label">
+
+                                                    Senha do administrador
+
+                                                </label>
+
+                                                <input
+                                                    type="password"
+                                                    class="form-control"
+                                                    id="senhaPredio{{ predio.id }}"
+                                                    name="senha"
+                                                    autocomplete="current-password"
+                                                    required>
+
+                                                <div class="form-text">
+
+                                                    Informe sua senha para confirmar
+                                                    a exclusão permanente desta estrutura.
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                        <div class="modal-footer">
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-secondary"
+                                                data-bs-dismiss="modal">
+
+                                                Cancelar
+
+                                            </button>
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-danger">
+
+                                                Confirmar exclusão
+
+                                            </button>
+
+                                        </div>
+
+                                    </form>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
 
                 {% else %}
 

@@ -1,3 +1,5 @@
+from functools import wraps
+
 from flask import (
     Blueprint,
     flash,
@@ -19,8 +21,36 @@ usuario_bp = Blueprint(
 )
 
 
+PERFIS_VALIDOS = (
+    "ADMINISTRADOR",
+    "OPERADOR"
+)
+
+
+def administrador_obrigatorio(func):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        if session.get("usuario_perfil") != "ADMINISTRADOR":
+
+            flash(
+                "Acesso permitido apenas para administradores.",
+                "danger"
+            )
+
+            return redirect(
+                url_for("home.dashboard")
+            )
+
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 @usuario_bp.route("/")
 @login_obrigatorio
+@administrador_obrigatorio
 def listar():
 
     usuarios = Usuario.query.order_by(
@@ -35,6 +65,7 @@ def listar():
 
 @usuario_bp.route("/novo", methods=["GET", "POST"])
 @login_obrigatorio
+@administrador_obrigatorio
 def novo():
 
     if request.method == "POST":
@@ -48,6 +79,11 @@ def novo():
             "login",
             ""
         ).strip()
+
+        perfil = request.form.get(
+            "perfil",
+            ""
+        ).strip().upper()
 
         senha = request.form.get(
             "senha",
@@ -63,6 +99,18 @@ def novo():
 
             flash(
                 "Preencha todos os campos obrigatórios.",
+                "danger"
+            )
+
+            return render_template(
+                "usuario/form.html",
+                usuario=None
+            )
+
+        if perfil not in PERFIS_VALIDOS:
+
+            flash(
+                "Perfil de usuário inválido.",
                 "danger"
             )
 
@@ -102,6 +150,7 @@ def novo():
         usuario = Usuario(
             nome=nome,
             login=login,
+            perfil=perfil,
             ativo=True
         )
 
@@ -125,8 +174,12 @@ def novo():
     )
 
 
-@usuario_bp.route("/<int:usuario_id>/editar", methods=["GET", "POST"])
+@usuario_bp.route(
+    "/<int:usuario_id>/editar",
+    methods=["GET", "POST"]
+)
 @login_obrigatorio
+@administrador_obrigatorio
 def editar(usuario_id):
 
     usuario = Usuario.query.get_or_404(
@@ -145,10 +198,43 @@ def editar(usuario_id):
             ""
         ).strip()
 
+        perfil = request.form.get(
+            "perfil",
+            ""
+        ).strip().upper()
+
         if not nome or not login:
 
             flash(
                 "Preencha todos os campos obrigatórios.",
+                "danger"
+            )
+
+            return render_template(
+                "usuario/form.html",
+                usuario=usuario
+            )
+
+        if perfil not in PERFIS_VALIDOS:
+
+            flash(
+                "Perfil de usuário inválido.",
+                "danger"
+            )
+
+            return render_template(
+                "usuario/form.html",
+                usuario=usuario
+            )
+
+        if (
+            session.get("usuario_id") == usuario.id
+            and perfil != "ADMINISTRADOR"
+        ):
+
+            flash(
+                "Você não pode alterar o próprio perfil "
+                "de Administrador para Operador.",
                 "danger"
             )
 
@@ -176,11 +262,14 @@ def editar(usuario_id):
 
         usuario.nome = nome
         usuario.login = login
+        usuario.perfil = perfil
 
         db.session.commit()
 
         if session.get("usuario_id") == usuario.id:
+
             session["usuario_nome"] = usuario.nome
+            session["usuario_perfil"] = usuario.perfil
 
         flash(
             "Usuário atualizado com sucesso.",
@@ -197,8 +286,12 @@ def editar(usuario_id):
     )
 
 
-@usuario_bp.route("/<int:usuario_id>/senha", methods=["GET", "POST"])
+@usuario_bp.route(
+    "/<int:usuario_id>/senha",
+    methods=["GET", "POST"]
+)
 @login_obrigatorio
+@administrador_obrigatorio
 def alterar_senha(usuario_id):
 
     usuario = Usuario.query.get_or_404(
@@ -260,8 +353,12 @@ def alterar_senha(usuario_id):
     )
 
 
-@usuario_bp.route("/<int:usuario_id>/status", methods=["POST"])
+@usuario_bp.route(
+    "/<int:usuario_id>/status",
+    methods=["POST"]
+)
 @login_obrigatorio
+@administrador_obrigatorio
 def alterar_status(usuario_id):
 
     usuario = Usuario.query.get_or_404(

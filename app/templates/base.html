@@ -283,23 +283,27 @@
 
                             </li>
 
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
+                            {% if session.get("usuario_perfil") == "ADMINISTRADOR" %}
 
-                            <li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
 
-                                <a
-                                    class="dropdown-item"
-                                    href="{{ url_for(
-                                        'usuario.listar'
-                                    ) }}">
+                                <li>
 
-                                    Usuários
+                                    <a
+                                        class="dropdown-item"
+                                        href="{{ url_for(
+                                            'usuario.listar'
+                                        ) }}">
 
-                                </a>
+                                        Usuários
 
-                            </li>
+                                    </a>
+
+                                </li>
+
+                            {% endif %}
 
                         </ul>
 

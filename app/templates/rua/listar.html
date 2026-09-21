@@ -34,7 +34,7 @@
 
                 <th>Status</th>
 
-                <th width="220">
+                <th width="320">
                     Ações
                 </th>
 
@@ -121,11 +121,234 @@
 
                             </form>
 
+                            {% if session.get("usuario_perfil") == "ADMINISTRADOR" %}
+
+                                {% if not rua.predios %}
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('rua.excluir', id=rua.id) }}">
+
+                                        <button
+                                            type="submit"
+                                            class="btn btn-danger btn-sm"
+                                            onclick="return confirm('Deseja realmente excluir esta rua? Esta ação não poderá ser desfeita.')">
+
+                                            Excluir
+
+                                        </button>
+
+                                    </form>
+
+                                {% else %}
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-danger btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalExcluirRua{{ rua.id }}">
+
+                                        Excluir estrutura
+
+                                    </button>
+
+                                {% endif %}
+
+                            {% endif %}
+
                         </div>
 
                     </td>
 
                 </tr>
+
+                {% if
+                    session.get("usuario_perfil") == "ADMINISTRADOR"
+                    and rua.predios
+                %}
+
+                    {% set totais = namespace(
+                        modulos=0,
+                        niveis=0,
+                        posicoes=0
+                    ) %}
+
+                    {% for predio in rua.predios %}
+
+                        {% set totais.modulos =
+                            totais.modulos + predio.modulos|length
+                        %}
+
+                        {% for modulo in predio.modulos %}
+
+                            {% set totais.niveis =
+                                totais.niveis + modulo.niveis|length
+                            %}
+
+                            {% for nivel in modulo.niveis %}
+
+                                {% set totais.posicoes =
+                                    totais.posicoes + nivel.posicoes|length
+                                %}
+
+                            {% endfor %}
+
+                        {% endfor %}
+
+                    {% endfor %}
+
+                    <div
+                        class="modal fade"
+                        id="modalExcluirRua{{ rua.id }}"
+                        tabindex="-1"
+                        aria-labelledby="modalExcluirRuaLabel{{ rua.id }}"
+                        aria-hidden="true">
+
+                        <div class="modal-dialog modal-dialog-centered">
+
+                            <div class="modal-content">
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for('rua.excluir', id=rua.id) }}">
+
+                                    <div class="modal-header">
+
+                                        <h5
+                                            class="modal-title"
+                                            id="modalExcluirRuaLabel{{ rua.id }}">
+
+                                            Excluir estrutura completa
+
+                                        </h5>
+
+                                        <button
+                                            type="button"
+                                            class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Fechar">
+                                        </button>
+
+                                    </div>
+
+                                    <div class="modal-body">
+
+                                        <div class="alert alert-danger">
+
+                                            <strong>Atenção!</strong>
+
+                                            <div class="mt-2">
+
+                                                Esta operação excluirá permanentemente
+                                                toda a estrutura vinculada a esta rua:
+
+                                            </div>
+
+                                            <ul class="mb-0 mt-2">
+
+                                                <li>
+                                                    a rua
+                                                    <strong>{{ rua.nome }}</strong>;
+                                                </li>
+
+                                                <li>
+                                                    {{ rua.predios|length }}
+                                                    prédio(s);
+                                                </li>
+
+                                                <li>
+                                                    {{ totais.modulos }}
+                                                    módulo(s);
+                                                </li>
+
+                                                <li>
+                                                    {{ totais.niveis }}
+                                                    nível(is);
+                                                </li>
+
+                                                <li>
+                                                    {{ totais.posicoes }}
+                                                    posição(ões).
+                                                </li>
+
+                                            </ul>
+
+                                        </div>
+
+                                        <p>
+
+                                            A exclusão somente será permitida se
+                                            <strong>nenhuma posição desta estrutura possuir produto endereçado</strong>.
+
+                                        </p>
+
+                                        <p class="text-danger">
+
+                                            <strong>
+                                                Esta ação é permanente e não poderá ser desfeita.
+                                            </strong>
+
+                                        </p>
+
+                                        <div class="mb-3">
+
+                                            <label
+                                                for="senhaRua{{ rua.id }}"
+                                                class="form-label">
+
+                                                Senha do administrador
+
+                                            </label>
+
+                                            <input
+                                                type="password"
+                                                class="form-control"
+                                                id="senhaRua{{ rua.id }}"
+                                                name="senha"
+                                                autocomplete="current-password"
+                                                required>
+
+                                            <div class="form-text">
+
+                                                Informe sua senha para confirmar
+                                                a exclusão permanente de toda esta estrutura.
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div class="modal-footer">
+
+                                        <button
+                                            type="button"
+                                            class="btn btn-secondary"
+                                            data-bs-dismiss="modal">
+
+                                            Cancelar
+
+                                        </button>
+
+                                        <button
+                                            type="submit"
+                                            class="btn btn-danger">
+
+                                            Confirmar exclusão
+
+                                        </button>
+
+                                    </div>
+
+                                </form>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
 
             {% else %}
 

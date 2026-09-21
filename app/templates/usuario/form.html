@@ -76,6 +76,60 @@
 
                     </div>
 
+                    <div class="mb-3">
+
+                        <label
+                            for="perfil"
+                            class="form-label">
+
+                            Perfil
+
+                        </label>
+
+                        {% set perfil_selecionado =
+                            request.form.get(
+                                'perfil',
+                                usuario.perfil if usuario else 'OPERADOR'
+                            )
+                        %}
+
+                        <select
+                            class="form-select"
+                            id="perfil"
+                            name="perfil"
+                            required>
+
+                            <option
+                                value="OPERADOR"
+                                {% if perfil_selecionado == "OPERADOR" %}
+                                    selected
+                                {% endif %}>
+
+                                Operador
+
+                            </option>
+
+                            <option
+                                value="ADMINISTRADOR"
+                                {% if perfil_selecionado == "ADMINISTRADOR" %}
+                                    selected
+                                {% endif %}>
+
+                                Administrador
+
+                            </option>
+
+                        </select>
+
+                        <div class="form-text">
+
+                            Operador possui acesso às funções operacionais.
+                            Administrador possui controle total do SIGE.
+
+                        </div>
+
+                    </div>
+
                     {% if not usuario %}
 
                         <div class="mb-3">

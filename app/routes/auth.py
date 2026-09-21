@@ -112,6 +112,8 @@ def login():
 
             session["usuario_nome"] = usuario.nome
 
+            session["usuario_perfil"] = usuario.perfil
+
             session["ultima_atividade"] = (
                 datetime.now(
                     timezone.utc

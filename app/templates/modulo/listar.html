@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 
 {% block title %}
+
 Módulos
+
 {% endblock %}
 
 {% block content %}
@@ -52,7 +54,9 @@ Módulos
     <div class="card mb-4">
 
         <div class="card-header">
+
             Filtros
+
         </div>
 
         <div class="card-body">
@@ -79,7 +83,9 @@ Módulos
                         onchange="this.form.submit()">
 
                         <option value="">
+
                             Todas as ruas
+
                         </option>
 
                         {% for rua in ruas %}
@@ -116,7 +122,9 @@ Módulos
                         name="predio_id">
 
                         <option value="">
+
                             Todos os prédios
+
                         </option>
 
                         {% for predio in predios %}
@@ -178,7 +186,9 @@ Módulos
             Total exibido:
 
             <strong>
+
                 {{ modulos|length }}
+
             </strong>
 
             módulo(s)
@@ -196,27 +206,39 @@ Módulos
                 <tr>
 
                     <th width="80">
+
                         ID
+
                     </th>
 
                     <th>
+
                         Módulo
+
                     </th>
 
                     <th>
+
                         Prédio
+
                     </th>
 
                     <th>
+
                         Rua
+
                     </th>
 
                     <th>
+
                         Status
+
                     </th>
 
-                    <th width="220">
+                    <th width="320">
+
                         Ações
+
                     </th>
 
                 </tr>
@@ -230,19 +252,27 @@ Módulos
                     <tr>
 
                         <td>
+
                             {{ modulo.id }}
+
                         </td>
 
                         <td>
+
                             {{ modulo.nome }}
+
                         </td>
 
                         <td>
+
                             {{ modulo.predio.nome }}
+
                         </td>
 
                         <td>
+
                             {{ modulo.predio.rua.nome }}
+
                         </td>
 
                         <td>
@@ -250,13 +280,17 @@ Módulos
                             {% if modulo.ativo %}
 
                                 <span class="badge text-bg-success">
+
                                     Ativo
+
                                 </span>
 
                             {% else %}
 
                                 <span class="badge text-bg-secondary">
+
                                     Inativo
+
                                 </span>
 
                             {% endif %}
@@ -306,11 +340,207 @@ Módulos
 
                                 </form>
 
+                                {% if session.get("usuario_perfil") == "ADMINISTRADOR" %}
+
+                                    {% if not modulo.niveis %}
+
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for(
+                                                'modulo.excluir',
+                                                id=modulo.id
+                                            ) }}">
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-danger btn-sm"
+                                                onclick="return confirm('Deseja realmente excluir este módulo? Esta ação não poderá ser desfeita.')">
+
+                                                Excluir
+
+                                            </button>
+
+                                        </form>
+
+                                    {% else %}
+
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-danger btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalExcluirModulo{{ modulo.id }}">
+
+                                            Excluir estrutura
+
+                                        </button>
+
+                                    {% endif %}
+
+                                {% endif %}
+
                             </div>
 
                         </td>
 
                     </tr>
+
+                    {% if
+                        session.get("usuario_perfil") == "ADMINISTRADOR"
+                        and modulo.niveis
+                    %}
+
+                        {% set quantidade_posicoes = namespace(total=0) %}
+
+                        {% for nivel in modulo.niveis %}
+
+                            {% set quantidade_posicoes.total =
+                                quantidade_posicoes.total + nivel.posicoes|length
+                            %}
+
+                        {% endfor %}
+
+                        <div
+                            class="modal fade"
+                            id="modalExcluirModulo{{ modulo.id }}"
+                            tabindex="-1"
+                            aria-labelledby="modalExcluirModuloLabel{{ modulo.id }}"
+                            aria-hidden="true">
+
+                            <div class="modal-dialog modal-dialog-centered">
+
+                                <div class="modal-content">
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for(
+                                            'modulo.excluir',
+                                            id=modulo.id
+                                        ) }}">
+
+                                        <div class="modal-header">
+
+                                            <h5
+                                                class="modal-title"
+                                                id="modalExcluirModuloLabel{{ modulo.id }}">
+
+                                                Excluir estrutura
+
+                                            </h5>
+
+                                            <button
+                                                type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal"
+                                                aria-label="Fechar">
+                                            </button>
+
+                                        </div>
+
+                                        <div class="modal-body">
+
+                                            <div class="alert alert-danger">
+
+                                                <strong>Atenção!</strong>
+
+                                                <div class="mt-2">
+
+                                                    Esta operação excluirá permanentemente:
+
+                                                </div>
+
+                                                <ul class="mb-0 mt-2">
+
+                                                    <li>
+
+                                                        o módulo
+                                                        <strong>{{ modulo.nome }}</strong>;
+
+                                                    </li>
+
+                                                    <li>
+
+                                                        {{ modulo.niveis|length }}
+                                                        nível(is);
+
+                                                    </li>
+
+                                                    <li>
+
+                                                        {{ quantidade_posicoes.total }}
+                                                        posição(ões).
+
+                                                    </li>
+
+                                                </ul>
+
+                                            </div>
+
+                                            <p>
+
+                                                A exclusão somente será permitida se
+                                                <strong>nenhuma posição desta estrutura possuir produto endereçado</strong>.
+
+                                            </p>
+
+                                            <div class="mb-3">
+
+                                                <label
+                                                    for="senhaModulo{{ modulo.id }}"
+                                                    class="form-label">
+
+                                                    Senha do administrador
+
+                                                </label>
+
+                                                <input
+                                                    type="password"
+                                                    class="form-control"
+                                                    id="senhaModulo{{ modulo.id }}"
+                                                    name="senha"
+                                                    autocomplete="current-password"
+                                                    required>
+
+                                                <div class="form-text">
+
+                                                    Informe sua senha para confirmar
+                                                    a exclusão permanente desta estrutura.
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                        <div class="modal-footer">
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-secondary"
+                                                data-bs-dismiss="modal">
+
+                                                Cancelar
+
+                                            </button>
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-danger">
+
+                                                Confirmar exclusão
+
+                                            </button>
+
+                                        </div>
+
+                                    </form>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
 
                 {% else %}
 

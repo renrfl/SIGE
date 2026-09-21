@@ -420,39 +420,43 @@ Posições
 
                                 </form>
 
-                                {% if not posicao.ocupada %}
+                                {% if session.get("usuario_perfil") == "ADMINISTRADOR" %}
 
-                                    <form
-                                        method="POST"
-                                        action="{{ url_for(
-                                            'posicao.excluir',
-                                            id=posicao.id
-                                        ) }}">
+                                    {% if not posicao.ocupada %}
+
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for(
+                                                'posicao.excluir',
+                                                id=posicao.id
+                                            ) }}">
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-danger btn-sm"
+                                                onclick="return confirm(
+                                                    'Deseja excluir definitivamente esta posição vazia?'
+                                                )">
+
+                                                Excluir
+
+                                            </button>
+
+                                        </form>
+
+                                    {% else %}
 
                                         <button
-                                            type="submit"
-                                            class="btn btn-danger btn-sm"
-                                            onclick="return confirm(
-                                                'Deseja excluir definitivamente esta posição vazia?'
-                                            )">
+                                            type="button"
+                                            class="btn btn-outline-danger btn-sm"
+                                            disabled
+                                            title="Remova ou transfira o endereçamento antes de excluir">
 
                                             Excluir
 
                                         </button>
 
-                                    </form>
-
-                                {% else %}
-
-                                    <button
-                                        type="button"
-                                        class="btn btn-outline-danger btn-sm"
-                                        disabled
-                                        title="Remova ou transfira o endereçamento antes de excluir">
-
-                                        Excluir
-
-                                    </button>
+                                    {% endif %}
 
                                 {% endif %}
 

@@ -1,7 +1,20 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for
+)
 
 from app import db
-from app.models import Predio, Rua
+from app.models import (
+    Predio,
+    ProdutoEndereco,
+    Rua,
+    Usuario
+)
 
 
 predio_bp = Blueprint(
@@ -341,6 +354,213 @@ def alternar_status(id):
             ),
             "success"
         )
+
+    return redirect(
+        url_for(
+            "predio.listar"
+        )
+    )
+
+
+@predio_bp.route(
+    "/excluir/<int:id>",
+    methods=["POST"]
+)
+def excluir(id):
+
+    if session.get("usuario_perfil") != "ADMINISTRADOR":
+
+        flash(
+            "Apenas administradores podem excluir prédios.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "predio.listar"
+            )
+        )
+
+    predio = Predio.query.get_or_404(
+        id
+    )
+
+    modulos = list(
+        predio.modulos
+    )
+
+    if not modulos:
+
+        db.session.delete(
+            predio
+        )
+
+        db.session.commit()
+
+        flash(
+            "Prédio vazio excluído com sucesso.",
+            "success"
+        )
+
+        return redirect(
+            url_for(
+                "predio.listar"
+            )
+        )
+
+    niveis = []
+    posicoes = []
+
+    for modulo in modulos:
+
+        for nivel in modulo.niveis:
+
+            niveis.append(
+                nivel
+            )
+
+            posicoes.extend(
+                list(nivel.posicoes)
+            )
+
+    if posicoes:
+
+        posicoes_ids = [
+            posicao.id
+            for posicao in posicoes
+        ]
+
+        endereco = ProdutoEndereco.query.filter(
+            ProdutoEndereco.posicao_id.in_(
+                posicoes_ids
+            )
+        ).first()
+
+        if endereco:
+
+            flash(
+                (
+                    "Não é possível excluir este prédio porque existe "
+                    "pelo menos um produto endereçado em uma de suas "
+                    "posições. Remova ou transfira os endereçamentos "
+                    "antes de continuar."
+                ),
+                "danger"
+            )
+
+            return redirect(
+                url_for(
+                    "predio.listar"
+                )
+            )
+
+    senha = request.form.get(
+        "senha",
+        ""
+    )
+
+    if not senha:
+
+        flash(
+            (
+                "Este prédio possui uma estrutura cadastrada. "
+                "Informe sua senha de administrador para confirmar "
+                "a exclusão."
+            ),
+            "warning"
+        )
+
+        return redirect(
+            url_for(
+                "predio.listar"
+            )
+        )
+
+    usuario = Usuario.query.get(
+        session.get("usuario_id")
+    )
+
+    if (
+        not usuario
+        or not usuario.ativo
+        or usuario.perfil != "ADMINISTRADOR"
+        or not usuario.verificar_senha(senha)
+    ):
+
+        flash(
+            "Senha de administrador incorreta.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "predio.listar"
+            )
+        )
+
+    quantidade_modulos = len(
+        modulos
+    )
+
+    quantidade_niveis = len(
+        niveis
+    )
+
+    quantidade_posicoes = len(
+        posicoes
+    )
+
+    try:
+
+        for modulo in modulos:
+
+            for nivel in list(modulo.niveis):
+
+                for posicao in list(nivel.posicoes):
+
+                    db.session.delete(
+                        posicao
+                    )
+
+                db.session.delete(
+                    nivel
+                )
+
+            db.session.delete(
+                modulo
+            )
+
+        db.session.delete(
+            predio
+        )
+
+        db.session.commit()
+
+    except Exception:
+
+        db.session.rollback()
+
+        flash(
+            "Não foi possível excluir a estrutura do prédio.",
+            "danger"
+        )
+
+        return redirect(
+            url_for(
+                "predio.listar"
+            )
+        )
+
+    flash(
+        (
+            "Estrutura excluída com sucesso. "
+            f"Foram excluídos {quantidade_modulos} módulo(s), "
+            f"{quantidade_niveis} nível(is), "
+            f"{quantidade_posicoes} posição(ões) "
+            "e o prédio selecionado."
+        ),
+        "success"
+    )
 
     return redirect(
         url_for(

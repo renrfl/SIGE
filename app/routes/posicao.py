@@ -1,4 +1,12 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for
+)
 
 from app import db
 from app.models import (
@@ -536,6 +544,17 @@ def alternar_status(id):
     methods=["POST"]
 )
 def excluir(id):
+
+    if session.get("usuario_perfil") != "ADMINISTRADOR":
+
+        flash(
+            "Apenas administradores podem excluir posições.",
+            "danger"
+        )
+
+        return redirect(
+            obter_destino_retorno()
+        )
 
     posicao = Posicao.query.get_or_404(
         id
