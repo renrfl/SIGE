@@ -13,6 +13,7 @@ consulta_bp = Blueprint(
 @consulta_bp.route("/", methods=["GET", "POST"])
 def index():
 
+    produto = None
     endereco = None
 
     if request.method == "POST":
@@ -32,5 +33,6 @@ def index():
 
     return render_template(
         "consulta/index.html",
+        produto=produto,
         endereco=endereco
     )

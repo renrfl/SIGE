@@ -563,12 +563,37 @@ def novo():
             url_for("endereco.listar")
         )
 
+    codigo_produto = request.args.get(
+        "codigo",
+        type=int
+    )
+
+    produto_id_selecionado = None
+
+    if codigo_produto:
+
+        produto_selecionado = Produto.query.filter_by(
+            codigo=codigo_produto,
+            ativo=True
+        ).first()
+
+        if produto_selecionado:
+
+            produto_id_selecionado = produto_selecionado.id
+
+        else:
+
+            flash(
+                "O produto informado não está disponível para endereçamento.",
+                "warning"
+            )
+
     return render_template(
         "endereco/form.html",
         endereco=None,
         produtos=produtos,
         posicoes=posicoes,
-        produto_id_selecionado=None,
+        produto_id_selecionado=produto_id_selecionado,
         posicao_id_selecionada=None,
         conflito=None
     )

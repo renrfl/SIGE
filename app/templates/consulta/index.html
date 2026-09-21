@@ -41,7 +41,7 @@ Consulta de Endereço
                                 class="form-control"
                                 id="pesquisa"
                                 name="pesquisa"
-                                {% if not endereco %}
+                                {% if not produto %}
                                     autofocus
                                 {% endif %}
                                 required>
@@ -180,6 +180,117 @@ Consulta de Endereço
                             </div>
 
                         {% endif %}
+
+                    </div>
+
+                </div>
+
+            {% elif produto %}
+
+                <div class="card mt-4">
+
+                    <div class="card-header">
+
+                        Resultado
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <h4 class="mb-3">
+
+                            {{ produto.codigo }}
+                            -
+                            {{ produto.descricao }}
+
+                        </h4>
+
+                        <table class="table table-bordered mb-3">
+
+                            <tbody>
+
+                                <tr>
+
+                                    <th width="200">
+                                        Código de barras
+                                    </th>
+
+                                    <td>
+
+                                        {% if produto.codigo_barras %}
+
+                                            {{ produto.codigo_barras }}
+
+                                        {% else %}
+
+                                            <span class="text-muted">
+                                                Não cadastrado
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                        <div
+                            class="alert alert-warning mb-0"
+                            role="alert">
+
+                            <h5 class="alert-heading">
+
+                                Produto sem endereço
+
+                            </h5>
+
+                            <p class="mb-0">
+
+                                Este produto ainda não possui endereço
+                                cadastrado no SIGE.
+
+                            </p>
+
+                            {% if session.get("usuario_id") %}
+
+                                <hr>
+
+                                <p>
+
+                                    Deseja cadastrar o endereço deste produto agora?
+
+                                </p>
+
+                                <div class="d-flex flex-wrap gap-2">
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-secondary"
+                                        onclick="document.getElementById('pesquisa').focus()">
+
+                                        Não
+
+                                    </button>
+
+                                    <a
+                                        href="{{ url_for(
+                                            'endereco.novo',
+                                            codigo=produto.codigo
+                                        ) }}"
+                                        class="btn btn-warning">
+
+                                        Cadastrar endereço
+
+                                    </a>
+
+                                </div>
+
+                            {% endif %}
+
+                        </div>
 
                     </div>
 
