@@ -19,13 +19,23 @@ def index():
     )
 
 
-@home_bp.route("/admin")
-@home_bp.route("/admin/")
-def dashboard():
+def calcular_indicadores_produtos(filtro_ativo=None):
 
-    total_produtos = Produto.query.count()
+    produtos_query = db.session.query(
+        Produto.id
+    )
 
-    produtos_enderecados = (
+    if filtro_ativo is not None:
+
+        produtos_query = produtos_query.filter(
+            Produto.ativo == filtro_ativo
+        )
+
+    total_produtos = (
+        produtos_query.count()
+    )
+
+    produtos_enderecados_query = (
         db.session.query(
             func.count(
                 distinct(
@@ -33,7 +43,22 @@ def dashboard():
                 )
             )
         )
-        .scalar()
+        .join(
+            Produto,
+            Produto.id == ProdutoEndereco.produto_id
+        )
+    )
+
+    if filtro_ativo is not None:
+
+        produtos_enderecados_query = (
+            produtos_enderecados_query.filter(
+                Produto.ativo == filtro_ativo
+            )
+        )
+
+    produtos_enderecados = (
+        produtos_enderecados_query.scalar()
         or 0
     )
 
@@ -41,8 +66,6 @@ def dashboard():
         total_produtos
         - produtos_enderecados
     )
-
-    total_posicoes = Posicao.query.count()
 
     if total_produtos > 0:
 
@@ -59,11 +82,60 @@ def dashboard():
 
         percentual_enderecado = 0
 
+    return {
+        "total_produtos": total_produtos,
+        "produtos_enderecados": produtos_enderecados,
+        "produtos_pendentes": produtos_pendentes,
+        "percentual_enderecado": percentual_enderecado
+    }
+
+
+@home_bp.route("/admin")
+@home_bp.route("/admin/")
+def dashboard():
+
+    indicadores_ativos = calcular_indicadores_produtos(
+        True
+    )
+
+    indicadores_todos = calcular_indicadores_produtos()
+
+    indicadores_inativos = calcular_indicadores_produtos(
+        False
+    )
+
+    total_posicoes = Posicao.query.count()
+
     return render_template(
         "index.html",
-        total_produtos=total_produtos,
-        produtos_enderecados=produtos_enderecados,
-        produtos_pendentes=produtos_pendentes,
+
+        total_produtos=(
+            indicadores_ativos[
+                "total_produtos"
+            ]
+        ),
+
+        produtos_enderecados=(
+            indicadores_ativos[
+                "produtos_enderecados"
+            ]
+        ),
+
+        produtos_pendentes=(
+            indicadores_ativos[
+                "produtos_pendentes"
+            ]
+        ),
+
+        percentual_enderecado=(
+            indicadores_ativos[
+                "percentual_enderecado"
+            ]
+        ),
+
         total_posicoes=total_posicoes,
-        percentual_enderecado=percentual_enderecado
+
+        indicadores_ativos=indicadores_ativos,
+        indicadores_todos=indicadores_todos,
+        indicadores_inativos=indicadores_inativos
     )

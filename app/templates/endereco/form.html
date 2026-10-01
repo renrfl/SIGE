@@ -21,11 +21,7 @@ Novo Endereçamento
     {% endif %}
 
     <p class="text-muted">
-
-        Pesquise um produto ativo e uma posição ativa.
-        O SIGE informa quando o produto já possui endereço
-        e quando a posição já está ocupada.
-
+        Selecione o produto e a posição.
     </p>
 
     {% if conflito %}
@@ -145,15 +141,12 @@ Novo Endereçamento
                 id="pesquisa_produto"
                 class="form-control"
                 autocomplete="off"
-                placeholder="Digite código, código de barras ou descrição"
+                placeholder="Código, barras ou descrição"
                 value="{%- for produto in produtos -%}{%- if produto_id_selecionado == produto.id -%}{{ produto.codigo }} - {{ produto.descricao }}{%- endif -%}{%- endfor -%}"
                 required>
 
             <div class="form-text">
-
-                Digite pelo menos dois caracteres e selecione um produto
-                nos resultados apresentados.
-
+                Digite ao menos 2 caracteres.
             </div>
 
             <div
@@ -241,14 +234,6 @@ Novo Endereçamento
 
             </label>
 
-            <div class="form-text mb-2">
-
-                Digite pelo menos dois caracteres.
-                Você pode pesquisar por Rua, Prédio, Módulo, Nível,
-                Posição, AVARIA ou DEPOSITO.
-
-            </div>
-
             <input
                 type="hidden"
                 id="posicao_id"
@@ -260,9 +245,16 @@ Novo Endereçamento
                 id="pesquisa_posicao"
                 class="form-control"
                 autocomplete="off"
-                placeholder="Ex.: RUA 1 PREDIO 2 MODULO 1, AVARIA ou DEPOSITO"
+                placeholder="Ex.: R1PR2M1 ou DEPOSITO"
                 value="{%- for posicao in posicoes -%}{%- if posicao_id_selecionada == posicao.id -%}{{ posicao.nivel.modulo.predio.rua.nome }} → {{ posicao.nivel.modulo.predio.nome }} → {{ posicao.nivel.modulo.nome }} → {{ posicao.nivel.nome }} → {{ posicao.nome }}{%- endif -%}{%- endfor -%}"
                 required>
+
+            <div class="form-text">
+
+                Busque por Rua, Prédio, Módulo, Posição,
+                AVARIA ou DEPOSITO.
+
+            </div>
 
             <div
                 id="mensagem-posicao"

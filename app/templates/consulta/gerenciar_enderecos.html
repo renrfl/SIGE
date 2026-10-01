@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}
+Gerenciar Endereços
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-3">
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-8">
+
+            <div class="card">
+
+                <div class="card-header bg-success text-white">
+
+                    Gerenciar Endereços
+
+                </div>
+
+                <div class="card-body py-3">
+
+                    <h5 class="mb-1">
+
+                        {{ produto.codigo }}
+                        -
+                        {{ produto.descricao }}
+
+                    </h5>
+
+                    {% if produto.codigo_barras %}
+
+                        <div class="text-muted small mb-3">
+
+                            {{ produto.codigo_barras }}
+
+                        </div>
+
+                    {% endif %}
+
+                    {% if enderecos %}
+
+                        <div class="mb-3">
+
+                            Endereços cadastrados:
+                            <strong>
+                                {{ total_enderecos }}
+                            </strong>
+
+                        </div>
+
+                        {% for endereco in enderecos %}
+
+                            <div class="card mb-3">
+
+                                <div class="card-body py-2">
+
+                                    <table class="table table-bordered table-sm mb-3">
+
+                                        <tbody>
+
+                                            <tr>
+
+                                                <th style="width: 40%;">
+                                                    Rua
+                                                </th>
+
+                                                <td>
+                                                    {{ endereco.posicao.nivel.modulo.predio.rua.nome }}
+                                                </td>
+
+                                            </tr>
+
+                                            <tr>
+
+                                                <th>
+                                                    Prédio
+                                                </th>
+
+                                                <td>
+                                                    {{ endereco.posicao.nivel.modulo.predio.nome }}
+                                                </td>
+
+                                            </tr>
+
+                                            <tr>
+
+                                                <th>
+                                                    Módulo
+                                                </th>
+
+                                                <td>
+                                                    {{ endereco.posicao.nivel.modulo.nome }}
+                                                </td>
+
+                                            </tr>
+
+                                            <tr>
+
+                                                <th>
+                                                    Posição
+                                                </th>
+
+                                                <td>
+                                                    {{ endereco.posicao.nome }}
+                                                </td>
+
+                                            </tr>
+
+                                        </tbody>
+
+                                    </table>
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-danger w-100"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modal-remover-{{ endereco.id }}">
+
+                                        Remover endereço
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                            <div
+                                class="modal fade"
+                                id="modal-remover-{{ endereco.id }}"
+                                tabindex="-1"
+                                aria-hidden="true">
+
+                                <div class="modal-dialog modal-dialog-centered">
+
+                                    <div class="modal-content">
+
+                                        <div class="modal-header">
+
+                                            <h5 class="modal-title">
+
+                                                Remover endereço?
+
+                                            </h5>
+
+                                            <button
+                                                type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal"
+                                                aria-label="Fechar">
+                                            </button>
+
+                                        </div>
+
+                                        <div class="modal-body">
+
+                                            Esta posição ficará livre.
+
+                                        </div>
+
+                                        <div class="modal-footer">
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-outline-secondary"
+                                                data-bs-dismiss="modal">
+
+                                                Cancelar
+
+                                            </button>
+
+                                            <form
+                                                method="POST"
+                                                action="{{ url_for(
+                                                    'consulta.remover_endereco',
+                                                    id=endereco.id
+                                                ) }}">
+
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-danger">
+
+                                                    Remover
+
+                                                </button>
+
+                                            </form>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        {% endfor %}
+
+                    {% else %}
+
+                        <div
+                            class="alert alert-warning mb-3"
+                            role="alert">
+
+                            Produto sem endereço
+
+                        </div>
+
+                    {% endif %}
+
+                    <a
+                        href="{{ url_for('consulta.index') }}"
+                        class="btn btn-outline-secondary w-100">
+
+                        Voltar
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

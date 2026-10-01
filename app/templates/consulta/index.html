@@ -6,7 +6,7 @@ Consulta de Endereço
 
 {% block content %}
 
-<div class="container mt-4">
+<div class="container mt-3">
 
     <div class="row justify-content-center">
 
@@ -20,7 +20,7 @@ Consulta de Endereço
 
                 </div>
 
-                <div class="card-body">
+                <div class="card-body py-3">
 
                     <form
                         method="POST"
@@ -64,36 +64,42 @@ Consulta de Endereço
 
             {% if endereco %}
 
-                <div class="card mt-4">
+                <div class="card mt-3">
 
-                    <div class="card-header">
+                    <div class="card-body py-3">
 
-                        Resultado
-
-                    </div>
-
-                    <div class="card-body">
-
-                        <h4 class="mb-3">
+                        <h5 class="mb-3">
 
                             {{ endereco.produto.codigo }}
                             -
                             {{ endereco.produto.descricao }}
 
-                        </h4>
+                        </h5>
 
-                        <table class="table table-bordered">
+                        <table class="table table-bordered table-sm mb-2">
 
                             <tbody>
 
                                 <tr>
 
-                                    <th width="200">
+                                    <th style="width: 40%;">
                                         Código de barras
                                     </th>
 
                                     <td>
-                                        {{ endereco.produto.codigo_barras }}
+
+                                        {% if endereco.produto.codigo_barras %}
+
+                                            {{ endereco.produto.codigo_barras }}
+
+                                        {% else %}
+
+                                            <span class="text-muted">
+                                                Não cadastrado
+                                            </span>
+
+                                        {% endif %}
+
                                     </td>
 
                                 </tr>
@@ -137,18 +143,6 @@ Consulta de Endereço
                                 <tr>
 
                                     <th>
-                                        Nível
-                                    </th>
-
-                                    <td>
-                                        {{ endereco.posicao.nivel.nome }}
-                                    </td>
-
-                                </tr>
-
-                                <tr>
-
-                                    <th>
                                         Posição
                                     </th>
 
@@ -162,20 +156,70 @@ Consulta de Endereço
 
                         </table>
 
+                        <div class="small text-muted mb-3">
+
+                            Posições:
+                            <strong>
+                                {{ total_enderecos }}
+                            </strong>
+
+                        </div>
+
                         {% if session.get("usuario_id") %}
 
-                            <div class="mt-3">
+                            <div class="row g-2 align-items-stretch">
 
-                                <a
-                                    href="{{ url_for(
-                                        'endereco.editar',
-                                        id=endereco.id
-                                    ) }}"
-                                    class="btn btn-warning">
+                                <div class="col-6 d-flex">
 
-                                    Alterar endereçamento
+                                    <a
+                                        href="{{ url_for(
+                                            'endereco.editar',
+                                            id=endereco.id
+                                        ) }}"
+                                        class="btn btn-warning w-100 d-flex align-items-center justify-content-center">
 
-                                </a>
+                                        Alterar endereço
+
+                                    </a>
+
+                                </div>
+
+                                <div class="col-6 d-flex">
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#funcoes-produto"
+                                        aria-expanded="false"
+                                        aria-controls="funcoes-produto">
+
+                                        + Funções
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                            <div
+                                class="collapse mt-2"
+                                id="funcoes-produto">
+
+                                <div class="card card-body py-2">
+
+                                    <a
+                                        href="{{ url_for(
+                                            'consulta.gerenciar_enderecos',
+                                            codigo=produto.codigo
+                                        ) }}"
+                                        class="btn btn-outline-danger w-100">
+
+                                        Gerenciar endereços
+
+                                    </a>
+
+                                </div>
 
                             </div>
 
@@ -187,31 +231,25 @@ Consulta de Endereço
 
             {% elif produto %}
 
-                <div class="card mt-4">
+                <div class="card mt-3">
 
-                    <div class="card-header">
+                    <div class="card-body py-3">
 
-                        Resultado
-
-                    </div>
-
-                    <div class="card-body">
-
-                        <h4 class="mb-3">
+                        <h5 class="mb-3">
 
                             {{ produto.codigo }}
                             -
                             {{ produto.descricao }}
 
-                        </h4>
+                        </h5>
 
-                        <table class="table table-bordered mb-3">
+                        <table class="table table-bordered table-sm mb-3">
 
                             <tbody>
 
                                 <tr>
 
-                                    <th width="200">
+                                    <th style="width: 40%;">
                                         Código de barras
                                     </th>
 
@@ -238,49 +276,27 @@ Consulta de Endereço
                         </table>
 
                         <div
-                            class="alert alert-warning mb-0"
+                            class="alert alert-warning py-2 mb-3"
                             role="alert">
 
-                            <h5 class="alert-heading">
-
+                            <strong>
                                 Produto sem endereço
+                            </strong>
 
-                            </h5>
+                        </div>
 
-                            <p class="mb-0">
+                        {% if session.get("usuario_id") %}
 
-                                Este produto ainda não possui endereço
-                                cadastrado no SIGE.
+                            <div class="row g-2 align-items-stretch">
 
-                            </p>
-
-                            {% if session.get("usuario_id") %}
-
-                                <hr>
-
-                                <p>
-
-                                    Deseja cadastrar o endereço deste produto agora?
-
-                                </p>
-
-                                <div class="d-flex flex-wrap gap-2">
-
-                                    <button
-                                        type="button"
-                                        class="btn btn-outline-secondary"
-                                        onclick="document.getElementById('pesquisa').focus()">
-
-                                        Não
-
-                                    </button>
+                                <div class="col-6 d-flex">
 
                                     <a
                                         href="{{ url_for(
                                             'endereco.novo',
                                             codigo=produto.codigo
                                         ) }}"
-                                        class="btn btn-warning">
+                                        class="btn btn-warning w-100 d-flex align-items-center justify-content-center">
 
                                         Cadastrar endereço
 
@@ -288,9 +304,42 @@ Consulta de Endereço
 
                                 </div>
 
-                            {% endif %}
+                                <div class="col-6 d-flex">
 
-                        </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#funcoes-produto-sem-endereco"
+                                        aria-expanded="false"
+                                        aria-controls="funcoes-produto-sem-endereco">
+
+                                        + Funções
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                            <div
+                                class="collapse mt-2"
+                                id="funcoes-produto-sem-endereco">
+
+                                <div class="card card-body py-2">
+
+                                    <div class="small text-muted">
+
+                                        Nenhuma função adicional
+                                        disponível no momento.
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        {% endif %}
 
                     </div>
 

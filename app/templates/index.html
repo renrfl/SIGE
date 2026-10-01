@@ -26,21 +26,88 @@ Dashboard - SIGE
 
     <div class="col-md-6 col-xl-3">
 
-        <div class="card shadow-sm h-100">
+        <div
+            class="card shadow-sm h-100"
+            style="cursor: pointer;"
+            data-bs-toggle="dropdown"
+            aria-expanded="false">
 
             <div class="card-body">
 
-                <div class="text-muted mb-2">
-                    Produtos cadastrados
+                <div class="d-flex justify-content-between align-items-center mb-2">
+
+                    <div class="text-muted">
+                        Produtos cadastrados
+                    </div>
+
+                    <span class="text-muted">
+                        ▾
+                    </span>
+
                 </div>
 
-                <div class="display-6 fw-bold">
+                <div
+                    class="small text-muted mb-1"
+                    id="filtro-produtos-label">
+
+                    Ativos
+
+                </div>
+
+                <div
+                    class="display-6 fw-bold"
+                    id="total-produtos">
+
                     {{ total_produtos }}
+
                 </div>
 
             </div>
 
         </div>
+
+        <ul class="dropdown-menu shadow">
+
+            <li>
+
+                <button
+                    type="button"
+                    class="dropdown-item active"
+                    data-filtro-produtos="ativos">
+
+                    Ativos
+
+                </button>
+
+            </li>
+
+            <li>
+
+                <button
+                    type="button"
+                    class="dropdown-item"
+                    data-filtro-produtos="todos">
+
+                    Todos
+
+                </button>
+
+            </li>
+
+            <li>
+
+                <button
+                    type="button"
+                    class="dropdown-item"
+                    data-filtro-produtos="inativos">
+
+                    Inativos
+
+                </button>
+
+            </li>
+
+        </ul>
 
     </div>
 
@@ -54,8 +121,12 @@ Dashboard - SIGE
                     Produtos endereçados
                 </div>
 
-                <div class="display-6 fw-bold text-success">
+                <div
+                    class="display-6 fw-bold text-success"
+                    id="produtos-enderecados">
+
                     {{ produtos_enderecados }}
+
                 </div>
 
             </div>
@@ -74,8 +145,12 @@ Dashboard - SIGE
                     Produtos pendentes
                 </div>
 
-                <div class="display-6 fw-bold text-danger">
+                <div
+                    class="display-6 fw-bold text-danger"
+                    id="produtos-pendentes">
+
                     {{ produtos_pendentes }}
+
                 </div>
 
             </div>
@@ -116,7 +191,7 @@ Dashboard - SIGE
                 Progresso do endereçamento
             </h2>
 
-            <strong>
+            <strong id="percentual-enderecado">
                 {{ percentual_enderecado }}%
             </strong>
 
@@ -129,10 +204,12 @@ Dashboard - SIGE
             aria-valuenow="{{ percentual_enderecado }}"
             aria-valuemin="0"
             aria-valuemax="100"
+            id="barra-progresso-container"
             style="height: 24px;">
 
             <div
                 class="progress-bar bg-success"
+                id="barra-progresso"
                 style="width: {{ percentual_enderecado }}%;">
 
                 {% if percentual_enderecado >= 10 %}
@@ -147,11 +224,11 @@ Dashboard - SIGE
 
         <div class="d-flex justify-content-between mt-2 small text-muted">
 
-            <span>
+            <span id="produtos-concluidos-texto">
                 {{ produtos_enderecados }} concluídos
             </span>
 
-            <span>
+            <span id="produtos-pendentes-texto">
                 {{ produtos_pendentes }} pendentes
             </span>
 
@@ -224,5 +301,179 @@ Dashboard - SIGE
     </div>
 
 </div>
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const indicadores = {
+            ativos: {
+                total_produtos: {{ indicadores_ativos["total_produtos"] | tojson }},
+                produtos_enderecados: {{ indicadores_ativos["produtos_enderecados"] | tojson }},
+                produtos_pendentes: {{ indicadores_ativos["produtos_pendentes"] | tojson }},
+                percentual_enderecado: {{ indicadores_ativos["percentual_enderecado"] | tojson }}
+            },
+
+            todos: {
+                total_produtos: {{ indicadores_todos["total_produtos"] | tojson }},
+                produtos_enderecados: {{ indicadores_todos["produtos_enderecados"] | tojson }},
+                produtos_pendentes: {{ indicadores_todos["produtos_pendentes"] | tojson }},
+                percentual_enderecado: {{ indicadores_todos["percentual_enderecado"] | tojson }}
+            },
+
+            inativos: {
+                total_produtos: {{ indicadores_inativos["total_produtos"] | tojson }},
+                produtos_enderecados: {{ indicadores_inativos["produtos_enderecados"] | tojson }},
+                produtos_pendentes: {{ indicadores_inativos["produtos_pendentes"] | tojson }},
+                percentual_enderecado: {{ indicadores_inativos["percentual_enderecado"] | tojson }}
+            }
+        };
+
+        const nomesFiltros = {
+            ativos: "Ativos",
+            todos: "Todos",
+            inativos: "Inativos"
+        };
+
+        const totalProdutos = document.getElementById(
+            "total-produtos"
+        );
+
+        const produtosEnderecados = document.getElementById(
+            "produtos-enderecados"
+        );
+
+        const produtosPendentes = document.getElementById(
+            "produtos-pendentes"
+        );
+
+        const filtroProdutosLabel = document.getElementById(
+            "filtro-produtos-label"
+        );
+
+        const percentualEnderecado = document.getElementById(
+            "percentual-enderecado"
+        );
+
+        const barraProgresso = document.getElementById(
+            "barra-progresso"
+        );
+
+        const barraProgressoContainer = document.getElementById(
+            "barra-progresso-container"
+        );
+
+        const produtosConcluidosTexto = document.getElementById(
+            "produtos-concluidos-texto"
+        );
+
+        const produtosPendentesTexto = document.getElementById(
+            "produtos-pendentes-texto"
+        );
+
+        const botoesFiltro = document.querySelectorAll(
+            "[data-filtro-produtos]"
+        );
+
+        function aplicarFiltro(filtro) {
+
+            const dados = indicadores[filtro];
+
+            if (!dados) {
+                return;
+            }
+
+            totalProdutos.textContent =
+                dados.total_produtos;
+
+            produtosEnderecados.textContent =
+                dados.produtos_enderecados;
+
+            produtosPendentes.textContent =
+                dados.produtos_pendentes;
+
+            filtroProdutosLabel.textContent =
+                nomesFiltros[filtro];
+
+            percentualEnderecado.textContent =
+                dados.percentual_enderecado + "%";
+
+            barraProgresso.style.width =
+                dados.percentual_enderecado + "%";
+
+            barraProgressoContainer.setAttribute(
+                "aria-valuenow",
+                dados.percentual_enderecado
+            );
+
+            if (
+                dados.percentual_enderecado >= 10
+            ) {
+
+                barraProgresso.textContent =
+                    dados.percentual_enderecado + "%";
+
+            } else {
+
+                barraProgresso.textContent = "";
+
+            }
+
+            produtosConcluidosTexto.textContent =
+                dados.produtos_enderecados
+                + " concluídos";
+
+            produtosPendentesTexto.textContent =
+                dados.produtos_pendentes
+                + " pendentes";
+
+            botoesFiltro.forEach(
+                function (botao) {
+
+                    if (
+                        botao.dataset.filtroProdutos
+                        === filtro
+                    ) {
+
+                        botao.classList.add(
+                            "active"
+                        );
+
+                    } else {
+
+                        botao.classList.remove(
+                            "active"
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+
+        botoesFiltro.forEach(
+            function (botao) {
+
+                botao.addEventListener(
+                    "click",
+                    function () {
+
+                        aplicarFiltro(
+                            botao.dataset.filtroProdutos
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+    }
+);
+
+</script>
 
 {% endblock %}
