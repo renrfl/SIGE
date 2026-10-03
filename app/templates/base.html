@@ -57,13 +57,46 @@
             font-weight: 600;
         }
 
+        .navbar .nav-link,
+        .navbar .dropdown-item,
+        .navbar-toggler {
+            min-height: 44px;
+        }
+
+        .navbar button.nav-link {
+            text-align: left;
+        }
+
+        .sige-usuario {
+            max-width: 180px;
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 1199.98px) {
+            .navbar .nav-link,
+            .navbar .dropdown-item {
+                display: flex;
+                align-items: center;
+            }
+
+            .navbar .dropdown-toggle {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .sige-usuario {
+                max-width: 100%;
+                padding-top: 12px;
+            }
+        }
+
     </style>
 
 </head>
 
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-xl navbar-dark bg-dark">
 
     <div class="container">
 
@@ -105,250 +138,102 @@
             <ul class="navbar-nav ms-auto">
 
                 <li class="nav-item">
-
-                    <a
-                        class="nav-link"
-                        href="{{ url_for(
-                            'consulta.index'
-                        ) }}">
-
+                    <a class="nav-link {{ 'active' if request.blueprint == 'consulta' else '' }}"
+                       href="{{ url_for('consulta.index') }}"
+                       {% if request.blueprint == 'consulta' %}aria-current="page"{% endif %}>
                         Consulta
-
                     </a>
-
                 </li>
 
                 {% if session.get("usuario_id") %}
 
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.blueprint == 'endereco' else '' }}"
+                           href="{{ url_for('endereco.listar') }}"
+                           {% if request.blueprint == 'endereco' %}aria-current="page"{% endif %}>
+                            Endereçamentos
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.blueprint == 'divergencia' else '' }}"
+                           href="{{ url_for('divergencia.listar') }}"
+                           {% if request.blueprint == 'divergencia' %}aria-current="page"{% endif %}>
+                            Divergências
+                        </a>
+                    </li>
+
                     <li class="nav-item dropdown">
-
-                        <a
-                            class="nav-link dropdown-toggle"
-                            href="#"
-                            role="button"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false">
-
-                            Administrativo
-
-                        </a>
-
-                        <ul class="dropdown-menu">
-
-                            <li>
-
-                                <a
-                                    class="dropdown-item"
-                                    href="{{ url_for(
-                                        'home.dashboard'
-                                    ) }}">
-
-                                    Dashboard
-
-                                </a>
-
-                            </li>
-
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-
-                            <li>
-
-                                <a
-                                    class="dropdown-item"
-                                    href="{{ url_for(
-                                        'produto.listar'
-                                    ) }}">
-
-                                    Produtos
-
-                                </a>
-
-                            </li>
-
-                            <li>
-
-                                <a
-                                    class="dropdown-item"
-                                    href="{{ url_for(
-                                        'endereco.listar'
-                                    ) }}">
-
-                                    Endereçamentos
-
-                                </a>
-
-                            </li>
-
-                            <li>
-
-                                <a
-                                    class="dropdown-item"
-                                    href="{{ url_for(
-                                        'etiqueta.pesquisar'
-                                    ) }}">
-
-                                    Etiquetas
-
-                                </a>
-
-                            </li>
-
-                            <li>
-
-                                <a
-                                    class="dropdown-item"
-                                    href="{{ url_for(
-                                        'divergencia.listar'
-                                    ) }}">
-
-                                    Divergências
-
-                                </a>
-
-                            </li>
-
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-
-                            <li>
-
-                                <a
-                                    class="dropdown-item"
-                                    href="{{ url_for(
-                                        'rua.listar'
-                                    ) }}">
-
-                                    Ruas
-
-                                </a>
-
-                            </li>
-
-                            <li>
-
-                                <a
-                                    class="dropdown-item"
-                                    href="{{ url_for(
-                                        'predio.listar'
-                                    ) }}">
-
-                                    Prédios
-
-                                </a>
-
-                            </li>
-
-                            <li>
-
-                                <a
-                                    class="dropdown-item"
-                                    href="{{ url_for(
-                                        'modulo.listar'
-                                    ) }}">
-
-                                    Módulos
-
-                                </a>
-
-                            </li>
-
-                            <li>
-
-                                <a
-                                    class="dropdown-item"
-                                    href="{{ url_for(
-                                        'nivel.listar'
-                                    ) }}">
-
-                                    Níveis
-
-                                </a>
-
-                            </li>
-
-                            <li>
-
-                                <a
-                                    class="dropdown-item"
-                                    href="{{ url_for(
-                                        'posicao.listar'
-                                    ) }}">
-
-                                    Posições
-
-                                </a>
-
-                            </li>
-
-                            {% if session.get("usuario_perfil") == "ADMINISTRADOR" %}
-
+                        <button class="nav-link dropdown-toggle {{ 'active' if request.blueprint in ['rua', 'predio', 'modulo', 'nivel', 'posicao'] else '' }}"
+                                type="button" id="menu-estrutura"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            Estrutura
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="menu-estrutura">
+                            {% for endpoint, nome, blueprint in [
+                                ('rua.listar', 'Ruas', 'rua'),
+                                ('predio.listar', 'Prédios', 'predio'),
+                                ('modulo.listar', 'Módulos', 'modulo'),
+                                ('nivel.listar', 'Níveis', 'nivel'),
+                                ('posicao.listar', 'Posições', 'posicao')
+                            ] %}
                                 <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-
-                                <li>
-
-                                    <a
-                                        class="dropdown-item"
-                                        href="{{ url_for(
-                                            'usuario.listar'
-                                        ) }}">
-
-                                        Usuários
-
+                                    <a class="dropdown-item {{ 'active' if request.blueprint == blueprint else '' }}"
+                                       href="{{ url_for(endpoint) }}"
+                                       {% if request.blueprint == blueprint %}aria-current="page"{% endif %}>
+                                        {{ nome }}
                                     </a>
-
                                 </li>
-
-                            {% endif %}
-
+                            {% endfor %}
                         </ul>
-
                     </li>
 
-                    <li class="nav-item">
+                    <li class="nav-item dropdown">
+                        <button class="nav-link dropdown-toggle {{ 'active' if request.blueprint in ['home', 'produto', 'etiqueta', 'usuario'] else '' }}"
+                                type="button" id="menu-gestao"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            Gestão
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="menu-gestao">
+                            {% for endpoint, nome, blueprint in [
+                                ('home.dashboard', 'Dashboard', 'home'),
+                                ('produto.listar', 'Produtos', 'produto'),
+                                ('etiqueta.pesquisar', 'Etiquetas', 'etiqueta')
+                            ] %}
+                                <li>
+                                    <a class="dropdown-item {{ 'active' if request.blueprint == blueprint else '' }}"
+                                       href="{{ url_for(endpoint) }}"
+                                       {% if request.blueprint == blueprint %}aria-current="page"{% endif %}>
+                                        {{ nome }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                            {% if session.get("usuario_perfil") == "ADMINISTRADOR" %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item {{ 'active' if request.blueprint == 'usuario' else '' }}"
+                                       href="{{ url_for('usuario.listar') }}"
+                                       {% if request.blueprint == 'usuario' %}aria-current="page"{% endif %}>
+                                        Usuários
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </li>
 
-                        <span class="navbar-text me-3">
-
-                            {{ session.get(
-                                "usuario_nome"
-                            ) }}
-
+                    <li class="nav-item d-flex align-items-center">
+                        <span class="navbar-text sige-usuario me-xl-3">
+                            {{ session.get("usuario_nome") }}
                         </span>
-
                     </li>
-
                     <li class="nav-item">
-
-                        <a
-                            class="nav-link"
-                            href="{{ url_for(
-                                'auth.logout'
-                            ) }}">
-
-                            Sair
-
-                        </a>
-
+                        <a class="nav-link" href="{{ url_for('auth.logout') }}">Sair</a>
                     </li>
 
                 {% else %}
 
                     <li class="nav-item">
-
-                        <a
-                            class="nav-link"
-                            href="{{ url_for(
-                                'auth.login'
-                            ) }}">
-
-                            Entrar
-
-                        </a>
-
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">Entrar</a>
                     </li>
 
                 {% endif %}

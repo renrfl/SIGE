@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}
-Endereçamento por Estrutura - Teste
+{{ 'Alterar endereço' if modo_alteracao else 'Novo endereçamento' }}
 {% endblock %}
 
 {% block content %}
@@ -55,21 +55,21 @@ Endereçamento por Estrutura - Teste
     data-multiplos-enderecos="{{ '1' if multiplos_enderecos else '0' }}">
 </div>
 
-<div class="container mt-3">
+<style>
+    .sige-enderecamento .form-control,
+    .sige-enderecamento .form-select,
+    .sige-enderecamento .btn {
+        min-height: 44px;
+    }
+</style>
 
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <h2 class="mb-0">
-            Endereçamento por Estrutura
-        </h2>
+<div class="container mt-3 sige-enderecamento">
 
-        <span class="badge text-bg-warning">
-            TESTE
-        </span>
-    </div>
+    <h2 class="h3 mb-2" id="titulo-enderecamento">
+        {{ 'Alterar endereço' if modo_alteracao else 'Novo endereçamento' }}
+    </h2>
 
-    <p class="text-muted mb-3">
-        Selecione o produto e a posição pela estrutura.
-    </p>
+
 
     <form
         method="POST"
@@ -285,7 +285,7 @@ Endereçamento por Estrutura - Teste
                 <div class="col-6 d-flex">
 
                     <a
-                        href="{{ url_for('endereco.novo_estrutura') }}"
+                        href="{{ url_for('endereco.novo') }}"
                         class="btn btn-secondary w-100 d-flex align-items-center justify-content-center">
                         Cancelar
                     </a>
@@ -316,7 +316,7 @@ Endereçamento por Estrutura - Teste
                         type="submit"
                         id="btn-salvar"
                         class="btn btn-success w-100 d-flex align-items-center justify-content-center">
-                        Salvar
+                        {{ 'Salvar alteração' if modo_alteracao else 'Salvar endereço' }}
                     </button>
 
                 </div>
@@ -375,6 +375,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function mostrarEnderecoAtual(texto) {
+
+        const alteracao = Boolean(texto);
+        const titulo = alteracao ? "Alterar endereço" : "Novo endereçamento";
+        document.getElementById("titulo-enderecamento").textContent = titulo;
+        document.title = titulo;
+        if (btnSalvar) {
+            btnSalvar.textContent = alteracao ? "Salvar alteração" : "Salvar endereço";
+        }
 
         if (!texto) {
             enderecoAtual.classList.add("d-none");

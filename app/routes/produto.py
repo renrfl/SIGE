@@ -206,9 +206,24 @@ def listar():
             produto
         )
 
+    administrador_exclusao = Usuario.query.filter_by(
+        id=session.get("usuario_id"),
+        ativo=True,
+        perfil="ADMINISTRADOR"
+    ).first()
+
+    token = None
+    if administrador_exclusao:
+        token = session.get("csrf_exclusao_produto")
+        if not isinstance(token, str) or not token:
+            token = token_urlsafe(32)
+            session["csrf_exclusao_produto"] = token
+
     return render_template(
         "produto/listar.html",
-        produtos=produtos
+        produtos=produtos,
+        administrador_exclusao=administrador_exclusao,
+        csrf_exclusao_produto=token
     )
 
 
@@ -1039,6 +1054,8 @@ def excluir(id):
                 "warning"
             )
 
+            if request.form.get("origem_confirmacao") == "listagem":
+                return redirect(url_for("produto.listar"))
             return redirect(url_for("produto.excluir", id=produto.id))
 
         senha = request.form.get("senha", "")
@@ -1050,6 +1067,8 @@ def excluir(id):
                 "danger"
             )
 
+            if request.form.get("origem_confirmacao") == "listagem":
+                return redirect(url_for("produto.listar"))
             return redirect(url_for("produto.excluir", id=produto.id))
 
         try:

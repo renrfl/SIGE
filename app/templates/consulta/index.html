@@ -353,53 +353,16 @@ Consulta de Endereço
 
                         {% if session.get("usuario_id") %}
 
-                            <div class="row g-2">
-
-                                <div class="col-6 d-grid">
-
-                                    <a
-                                        href="{{ url_for(
-                                            'endereco.novo_estrutura',
-                                            codigo=produto.codigo
-                                        ) }}"
-                                        class="btn btn-warning d-flex align-items-center justify-content-center">
-
-                                        Cadastrar endereço
-
-                                    </a>
-
-                                </div>
-
-                                <div class="col-6 d-grid">
-
-                                    <button
-                                        type="button"
-                                        class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
-                                        data-bs-toggle="collapse"
-                                        data-bs-target="#funcoes-produto-sem-endereco"
-                                        aria-expanded="false"
-                                        aria-controls="funcoes-produto-sem-endereco">
-
-                                        + Funções
-
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-                            <div
-                                class="collapse mt-2"
-                                id="funcoes-produto-sem-endereco">
-
-                                <div class="card card-body p-2">
-
-                                    <div class="small text-muted">
-                                        Nenhuma função adicional disponível no momento.
-                                    </div>
-
-                                </div>
-
+                            <div class="d-grid">
+                                <a
+                                    href="{{ url_for(
+                                        'endereco.novo_estrutura',
+                                        codigo=produto.codigo
+                                    ) }}"
+                                    class="btn btn-warning d-flex align-items-center justify-content-center"
+                                    style="min-height: 44px;">
+                                    Cadastrar endereço
+                                </a>
                             </div>
 
                         {% endif %}

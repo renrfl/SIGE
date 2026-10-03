@@ -1,5 +1,5 @@
-import re
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
+import secrets
+from flask import Blueprint, flash, jsonify, redirect, render_template, render_template_string, request, session, url_for
 from sqlalchemy import String, cast, or_
 from sqlalchemy.orm import joinedload
 from app import db
@@ -60,97 +60,6 @@ def formatar_endereco_operacional(posicao):
         f" → {posicao_nome}"
     )
 
-def normalizar_texto(texto):
-    texto = texto.upper()
-    texto = re.sub(
-        r"[^A-Z0-9]+",
-        " ",
-        texto
-    )
-    texto = re.sub(
-        r"\s+",
-        " ",
-        texto
-    )
-    return texto.strip()
-def normalizar_atalho(texto):
-    texto = texto.upper()
-    texto = re.sub(
-        r"[^A-Z0-9]",
-        "",
-        texto
-    )
-    return texto
-def extrair_numero_nome(nome, prefixo):
-    nome_normalizado = normalizar_texto(
-        nome
-    )
-    padrao = (
-        rf"^{re.escape(prefixo)}\s+(\d+)$"
-    )
-    resultado = re.match(
-        padrao,
-        nome_normalizado
-    )
-    if not resultado:
-        return None
-    return resultado.group(1)
-def gerar_atalho_posicao(posicao):
-    rua = posicao.nivel.modulo.predio.rua.nome
-    predio = posicao.nivel.modulo.predio.nome
-    modulo = posicao.nivel.modulo.nome
-    nivel = posicao.nivel.nome
-    posicao_nome = posicao.nome
-    numero_rua = extrair_numero_nome(
-        rua,
-        "RUA"
-    )
-    numero_deposito = extrair_numero_nome(
-        rua,
-        "DEPOSITO"
-    )
-    numero_predio = extrair_numero_nome(
-        predio,
-        "PREDIO"
-    )
-    numero_modulo = extrair_numero_nome(
-        modulo,
-        "MODULO"
-    )
-    numero_nivel = extrair_numero_nome(
-        nivel,
-        "NIVEL"
-    )
-    numero_posicao = extrair_numero_nome(
-        posicao_nome,
-        "POSICAO"
-    )
-    if numero_rua:
-        inicio = f"R{numero_rua}"
-    elif numero_deposito:
-        inicio = f"D{numero_deposito}"
-    else:
-        return None
-    partes = [
-        inicio
-    ]
-    if numero_predio:
-        partes.append(
-            f"PR{numero_predio}"
-        )
-    if numero_modulo:
-        partes.append(
-            f"M{numero_modulo}"
-        )
-    if numero_nivel:
-        partes.append(
-            f"N{numero_nivel}"
-        )
-    if numero_posicao:
-        partes.append(
-            f"PS{numero_posicao}"
-        )
-    return "".join(partes)
 def preparar_opcoes_formulario():
     produtos = Produto.query.filter_by(
         ativo=True
@@ -294,68 +203,6 @@ def buscar_produtos():
                 "endereco_atual": endereco_atual
             }
         )
-    return jsonify(resultados)
-@endereco_bp.route("/buscar-posicoes")
-def buscar_posicoes():
-    termo = request.args.get(
-        "q",
-        ""
-    ).strip()
-    if len(termo) < 2:
-        return jsonify([])
-    termo_normalizado = normalizar_texto(
-        termo
-    )
-    termo_atalho = normalizar_atalho(
-        termo
-    )
-    posicoes = Posicao.query.filter_by(
-        ativo=True
-    ).all()
-    resultados = []
-    for posicao in posicoes:
-        endereco_formatado = formatar_endereco_posicao(
-            posicao
-        )
-        endereco_normalizado = normalizar_texto(
-            endereco_formatado
-        )
-        atalho_posicao = gerar_atalho_posicao(
-            posicao
-        )
-        corresponde_busca_normal = (
-            termo_normalizado
-            in endereco_normalizado
-        )
-        corresponde_atalho = (
-            atalho_posicao is not None
-            and atalho_posicao.startswith(
-                termo_atalho
-            )
-        )
-        if (
-            not corresponde_busca_normal
-            and not corresponde_atalho
-        ):
-            continue
-        ocupacao = ProdutoEndereco.query.filter_by(
-            posicao_id=posicao.id
-        ).first()
-        resultado = {
-            "id": posicao.id,
-            "endereco": endereco_formatado,
-            "ocupada": ocupacao is not None,
-            "produto": None
-        }
-        if ocupacao:
-            resultado["produto"] = {
-                "id": ocupacao.produto.id,
-                "codigo": ocupacao.produto.codigo,
-                "descricao": ocupacao.produto.descricao
-            }
-        resultados.append(resultado)
-        if len(resultados) >= 20:
-            break
     return jsonify(resultados)
 @endereco_bp.route("/estrutura/predios")
 def estrutura_predios():
@@ -510,142 +357,22 @@ def listar():
             )
         )
 
+    token = session.get("csrf_exclusao_endereco")
+    if not isinstance(token, str) or not token:
+        token = secrets.token_urlsafe(32)
+        session["csrf_exclusao_endereco"] = token
+
     return render_template(
         "endereco/listar.html",
         enderecos=paginacao.items,
         paginacao=paginacao,
-        pesquisa=pesquisa
+        pesquisa=pesquisa,
+        csrf_exclusao_endereco=token
     )
 
 
 @endereco_bp.route("/novo", methods=["GET", "POST"])
 def novo():
-    produtos, posicoes = preparar_opcoes_formulario()
-    if request.method == "POST":
-        produto_id = request.form.get(
-            "produto_id",
-            type=int
-        )
-        posicao_id = request.form.get(
-            "posicao_id",
-            type=int
-        )
-        confirmar_substituicao = (
-            request.form.get(
-                "confirmar_substituicao"
-            )
-            == "sim"
-        )
-        if not produto_id or not posicao_id:
-            flash(
-                "Selecione o produto e a posição.",
-                "danger"
-            )
-            return render_template(
-                "endereco/form.html",
-                endereco=None,
-                produtos=produtos,
-                posicoes=posicoes,
-                produto_id_selecionado=produto_id,
-                posicao_id_selecionada=posicao_id,
-                conflito=None
-            )
-        produto = Produto.query.filter_by(
-            id=produto_id,
-            ativo=True
-        ).first_or_404()
-        posicao = Posicao.query.filter_by(
-            id=posicao_id,
-            ativo=True
-        ).first_or_404()
-        endereco_existente = ProdutoEndereco.query.filter_by(
-            produto_id=produto_id
-        ).first()
-        if endereco_existente:
-            flash(
-                "Este produto já possui um endereço cadastrado. Use Alterar endereço para mudar a posição.",
-                "warning"
-            )
-            return redirect(
-                url_for("endereco.novo")
-            )
-        ocupacao = buscar_ocupacao_posicao(
-            posicao_id=posicao_id,
-            produto_id=produto_id
-        )
-        if ocupacao and not confirmar_substituicao:
-            return render_template(
-                "endereco/form.html",
-                endereco=None,
-                produtos=produtos,
-                posicoes=posicoes,
-                produto_id_selecionado=produto_id,
-                posicao_id_selecionada=posicao_id,
-                conflito={
-                    "produto_novo": produto,
-                    "produto_atual": ocupacao.produto,
-                    "posicao": posicao
-                }
-            )
-        if ocupacao and confirmar_substituicao:
-            produto_anterior = substituir_ocupacao_posicao(
-                ocupacao=ocupacao,
-                produto_id=produto_id
-            )
-            flash(
-                (
-                    "Posição atualizada com sucesso. "
-                    f"O produto {produto_anterior.codigo} - "
-                    f"{produto_anterior.descricao} foi removido da posição "
-                    f"e substituído por {produto.codigo} - "
-                    f"{produto.descricao}."
-                ),
-                "success"
-            )
-            return redirect(
-                url_for("endereco.listar")
-            )
-        endereco = ProdutoEndereco(
-            produto_id=produto_id,
-            posicao_id=posicao_id
-        )
-        db.session.add(endereco)
-        db.session.commit()
-        flash(
-            "Produto endereçado com sucesso.",
-            "success"
-        )
-        return redirect(
-            url_for("endereco.listar")
-        )
-    codigo_produto = request.args.get(
-        "codigo",
-        type=int
-    )
-    produto_id_selecionado = None
-    if codigo_produto:
-        produto_selecionado = Produto.query.filter_by(
-            codigo=codigo_produto,
-            ativo=True
-        ).first()
-        if produto_selecionado:
-            produto_id_selecionado = produto_selecionado.id
-        else:
-            flash(
-                "O produto informado não está disponível para endereçamento.",
-                "warning"
-            )
-    return render_template(
-        "endereco/form.html",
-        endereco=None,
-        produtos=produtos,
-        posicoes=posicoes,
-        produto_id_selecionado=produto_id_selecionado,
-        posicao_id_selecionada=None,
-        conflito=None
-    )
-@endereco_bp.route("/novo-estrutura", methods=["GET", "POST"])
-def novo_estrutura():
     produtos, posicoes = preparar_opcoes_formulario()
 
     ruas = Rua.query.filter_by(
@@ -927,159 +654,86 @@ def novo_estrutura():
     )
 
 
-@endereco_bp.route("/editar/<int:id>", methods=["GET", "POST"])
+@endereco_bp.route("/novo-estrutura", methods=["GET", "POST"])
+def novo_estrutura():
+    # Mantém os links existentes no mesmo fluxo durante a atualização das telas.
+    return novo()
+
+
+@endereco_bp.route("/editar/<int:id>")
 def editar(id):
     endereco = ProdutoEndereco.query.get_or_404(id)
-    produtos, posicoes = preparar_opcoes_formulario()
-    if endereco.produto and endereco.produto not in produtos:
-        endereco.produto.total_enderecos = len(
-            endereco.produto.enderecos
-        )
-        endereco.produto.enderecado = True
-        produtos.append(endereco.produto)
-        produtos.sort(
-            key=lambda produto: produto.descricao.lower()
-        )
-    if endereco.posicao and endereco.posicao not in posicoes:
-        endereco.posicao.ocupada = True
-        endereco.posicao.produto_ocupante = endereco.produto
-        posicoes.append(endereco.posicao)
-        posicoes.sort(
-            key=lambda posicao: posicao.nome.lower()
-        )
-    if request.method == "POST":
-        produto_id = request.form.get(
-            "produto_id",
-            type=int
-        )
-        posicao_id = request.form.get(
-            "posicao_id",
-            type=int
-        )
-        confirmar_substituicao = (
-            request.form.get(
-                "confirmar_substituicao"
-            )
-            == "sim"
-        )
-        if not produto_id or not posicao_id:
-            flash(
-                "Selecione o produto e a posição.",
-                "danger"
-            )
-            return render_template(
-                "endereco/form.html",
-                endereco=endereco,
-                produtos=produtos,
-                posicoes=posicoes,
-                produto_id_selecionado=produto_id,
-                posicao_id_selecionada=posicao_id,
-                conflito=None
-            )
-        produto = Produto.query.get_or_404(produto_id)
-        posicao = Posicao.query.get_or_404(posicao_id)
-        if not produto.ativo and produto.id != endereco.produto_id:
-            flash(
-                "Não é permitido selecionar um produto inativo.",
-                "danger"
-            )
-            return redirect(
-                url_for(
-                    "endereco.editar",
-                    id=endereco.id
-                )
-            )
-        if not posicao.ativo and posicao.id != endereco.posicao_id:
-            flash(
-                "Não é permitido selecionar uma posição inativa.",
-                "danger"
-            )
-            return redirect(
-                url_for(
-                    "endereco.editar",
-                    id=endereco.id
-                )
-            )
-        if produto_id != endereco.produto_id:
-            endereco_existente = ProdutoEndereco.query.filter(
-                ProdutoEndereco.produto_id == produto_id,
-                ProdutoEndereco.id != endereco.id
-            ).first()
-            if endereco_existente:
-                flash(
-                    "Este produto já possui um endereço cadastrado. Use Alterar endereço para mudar a posição.",
-                    "warning"
-                )
-                return redirect(
-                    url_for(
-                        "endereco.editar",
-                        id=endereco.id
-                    )
-                )
-        ocupacao = buscar_ocupacao_posicao(
-            posicao_id=posicao_id,
-            produto_id=produto_id,
-            endereco_id=endereco.id
-        )
-        if ocupacao and not confirmar_substituicao:
-            return render_template(
-                "endereco/form.html",
-                endereco=endereco,
-                produtos=produtos,
-                posicoes=posicoes,
-                produto_id_selecionado=produto_id,
-                posicao_id_selecionada=posicao_id,
-                conflito={
-                    "produto_novo": produto,
-                    "produto_atual": ocupacao.produto,
-                    "posicao": posicao
-                }
-            )
-        if ocupacao and confirmar_substituicao:
-            produto_anterior = ocupacao.produto
-            db.session.delete(ocupacao)
-            endereco.produto_id = produto_id
-            endereco.posicao_id = posicao_id
-            db.session.commit()
-            flash(
-                (
-                    "Endereço atualizado com sucesso. "
-                    f"O produto {produto_anterior.codigo} - "
-                    f"{produto_anterior.descricao} foi removido da posição."
-                ),
-                "success"
-            )
-            return redirect(
-                url_for("endereco.listar")
-            )
-        endereco.produto_id = produto_id
-        endereco.posicao_id = posicao_id
-        db.session.commit()
-        flash(
-            "Endereço atualizado com sucesso.",
-            "success"
-        )
-        return redirect(
-            url_for("endereco.listar")
-        )
-    return render_template(
-        "endereco/form.html",
-        endereco=endereco,
-        produtos=produtos,
-        posicoes=posicoes,
-        produto_id_selecionado=endereco.produto_id,
-        posicao_id_selecionada=endereco.posicao_id,
-        conflito=None
-    )
-@endereco_bp.route("/excluir/<int:id>")
-def excluir(id):
-    endereco = ProdutoEndereco.query.get_or_404(id)
-    db.session.delete(endereco)
-    db.session.commit()
-    flash(
-        "Endereço removido com sucesso.",
-        "success"
-    )
     return redirect(
-        url_for("endereco.listar")
+        url_for("endereco.novo", codigo=endereco.produto.codigo)
+    )
+
+
+@endereco_bp.route("/excluir/<int:id>", methods=["GET", "POST"])
+def excluir(id):
+    if not session.get("usuario_id"):
+        return redirect(url_for("auth.login"))
+
+    endereco = ProdutoEndereco.query.get_or_404(id)
+
+    if request.method == "POST":
+        token_recebido = request.form.get("csrf_token", "")
+        token_sessao = session.get("csrf_exclusao_endereco", "")
+        confirmado = request.form.get("confirmar_id", "") == str(id)
+
+        if (
+            not isinstance(token_sessao, str)
+            or not token_sessao
+            or not token_recebido
+            or not secrets.compare_digest(
+                token_sessao.encode("utf-8"),
+                token_recebido.encode("utf-8")
+            )
+            or not confirmado
+        ):
+            flash("Confirmação inválida. Abra a confirmação novamente.", "warning")
+            return redirect(url_for("endereco.excluir", id=id))
+
+        db.session.delete(endereco)
+        db.session.commit()
+        session.pop("csrf_exclusao_endereco", None)
+        flash("Endereço removido com sucesso.", "success")
+        return redirect(url_for("endereco.listar"))
+
+    token = session.get("csrf_exclusao_endereco")
+    if not isinstance(token, str) or not token:
+        token = secrets.token_urlsafe(32)
+        session["csrf_exclusao_endereco"] = token
+
+    return render_template_string(
+        """
+        {% extends "base.html" %}
+        {% block title %}Remover endereçamento{% endblock %}
+        {% block content %}
+        <div class="card mx-auto" style="max-width: 560px;">
+            <div class="card-body">
+                <h2 class="h4 mb-3">Remover endereçamento?</h2>
+                <p class="fw-semibold mb-2" style="overflow-wrap: anywhere;">
+                    {{ endereco.produto.codigo }} — {{ endereco.produto.descricao }}
+                </p>
+                <p class="text-muted" style="overflow-wrap: anywhere;">{{ localizacao }}</p>
+                <p>O produto continuará cadastrado, mas ficará sem este endereço.</p>
+                <form method="post" action="{{ url_for('endereco.excluir', id=endereco.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="confirmar_id" value="{{ endereco.id }}">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger" style="min-height: 44px;">
+                            Confirmar exclusão
+                        </button>
+                        <a href="{{ url_for('endereco.listar') }}"
+                           class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                           style="min-height: 44px;">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endblock %}
+        """,
+        endereco=endereco,
+        localizacao=formatar_endereco_operacional(endereco.posicao),
+        csrf_token=token
     )

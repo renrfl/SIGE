@@ -16,17 +16,10 @@
             href="{{ url_for('endereco.novo') }}"
             class="btn btn-success d-flex align-items-center justify-content-center">
 
-            Novo Endereçamento
+            Novo endereçamento
 
         </a>
 
-        <a
-            href="{{ url_for('endereco.novo_estrutura') }}"
-            class="btn btn-outline-success d-flex align-items-center justify-content-center">
-
-            Teste por Estrutura
-
-        </a>
 
     </div>
 
@@ -219,14 +212,17 @@
 
                         </a>
 
-                        <a
-                            href="{{ url_for('endereco.excluir', id=endereco.id) }}"
+                        <button
+                            type="button"
                             class="btn btn-danger btn-sm"
-                            onclick="return confirm('Deseja remover este endereçamento?')">
-
+                            data-bs-toggle="modal"
+                            data-bs-target="#modal-excluir-endereco"
+                            data-endereco-id="{{ endereco.id }}"
+                            data-excluir-url="{{ url_for('endereco.excluir', id=endereco.id) }}"
+                            data-produto="{{ endereco.produto.codigo }} — {{ endereco.produto.descricao }}"
+                            data-localizacao="{{ endereco.posicao.nivel.modulo.predio.rua.nome }} → {{ endereco.posicao.nivel.modulo.predio.nome }} → {{ endereco.posicao.nivel.modulo.nome }} → {{ endereco.posicao.nome }}">
                             Excluir
-
-                        </a>
+                        </button>
 
                     </td>
 
@@ -403,14 +399,17 @@
 
                                         <div class="col-6">
 
-                                            <a
-                                                href="{{ url_for('endereco.excluir', id=endereco.id) }}"
-                                                class="btn btn-danger w-100"
-                                                onclick="return confirm('Deseja remover este endereçamento?')">
-
-                                                Excluir
-
-                                            </a>
+                                            <button
+                            type="button"
+                            class="btn btn-danger w-100"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modal-excluir-endereco"
+                            data-endereco-id="{{ endereco.id }}"
+                            data-excluir-url="{{ url_for('endereco.excluir', id=endereco.id) }}"
+                            data-produto="{{ endereco.produto.codigo }} — {{ endereco.produto.descricao }}"
+                            data-localizacao="{{ endereco.posicao.nivel.modulo.predio.rua.nome }} → {{ endereco.posicao.nivel.modulo.predio.nome }} → {{ endereco.posicao.nivel.modulo.nome }} → {{ endereco.posicao.nome }}">
+                            Excluir
+                        </button>
 
                                         </div>
 
@@ -469,5 +468,77 @@
         {% endif %}
     </nav>
 {% endif %}
+
+<div class="modal fade" id="modal-excluir-endereco" tabindex="-1"
+     aria-labelledby="titulo-excluir-endereco" aria-describedby="aviso-excluir-endereco"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="titulo-excluir-endereco">Excluir endereço?</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="post" id="form-excluir-endereco" class="d-flex flex-column overflow-hidden" style="min-height: 0;">
+                <div class="modal-body">
+                    <p class="fw-semibold mb-2" id="produto-excluir-endereco" style="overflow-wrap: anywhere;"></p>
+                    <p class="text-muted" id="localizacao-excluir-endereco" style="overflow-wrap: anywhere;"></p>
+                    <p class="mb-0" id="aviso-excluir-endereco">
+                        essa ação não poderá ser desfeita
+                    </p>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_exclusao_endereco }}">
+                    <input type="hidden" name="confirmar_id" id="confirmar-excluir-endereco">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary flex-fill"
+                            style="min-height: 44px;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger flex-fill"
+                            style="min-height: 44px;" id="botao-excluir-endereco" disabled>Excluir endereço</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("modal-excluir-endereco");
+    const form = document.getElementById("form-excluir-endereco");
+    const confirmarId = document.getElementById("confirmar-excluir-endereco");
+    const botao = document.getElementById("botao-excluir-endereco");
+    let enviando = false;
+
+    modal.addEventListener("show.bs.modal", function (event) {
+        const origem = event.relatedTarget;
+        if (!origem || !origem.dataset.enderecoId || !origem.dataset.excluirUrl) {
+            event.preventDefault();
+            return;
+        }
+        form.action = origem.dataset.excluirUrl;
+        confirmarId.value = origem.dataset.enderecoId;
+        document.getElementById("produto-excluir-endereco").textContent = origem.dataset.produto;
+        document.getElementById("localizacao-excluir-endereco").textContent = origem.dataset.localizacao;
+        enviando = false;
+        botao.disabled = false;
+        botao.textContent = "Excluir endereço";
+    });
+
+    modal.addEventListener("hidden.bs.modal", function () {
+        form.removeAttribute("action");
+        confirmarId.value = "";
+        botao.disabled = true;
+        enviando = false;
+    });
+
+    form.addEventListener("submit", function (event) {
+        if (enviando || !confirmarId.value || !form.hasAttribute("action")) {
+            event.preventDefault();
+            return;
+        }
+        enviando = true;
+        botao.disabled = true;
+        botao.textContent = "Excluindo…";
+    });
+});
+</script>
 
 {% endblock %}
