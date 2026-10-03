@@ -40,7 +40,8 @@ with app.app_context():
 
     usuario = Usuario(
         nome=nome,
-        login=login
+        login=login,
+        perfil="ADMINISTRADOR"
     )
 
     usuario.definir_senha(senha)

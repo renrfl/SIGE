@@ -1,0 +1,1087 @@
+{% extends "base.html" %}
+
+{% block title %}
+Endereçamento por Estrutura - Teste
+{% endblock %}
+
+{% block content %}
+
+{% set estado = namespace(
+    rua_id='',
+    predio_id='',
+    modulo_id='',
+    produto_texto='',
+    produto_enderecado=false,
+    endereco_atual_texto=''
+) %}
+
+{% if produto_id_selecionado %}
+    {% for produto in produtos %}
+        {% if produto.id == produto_id_selecionado %}
+            {% set estado.produto_texto = produto.codigo ~ ' - ' ~ produto.descricao %}
+            {% set estado.produto_enderecado = produto.enderecado %}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+{% if posicao_id_selecionada %}
+    {% for posicao in posicoes %}
+        {% if posicao.id == posicao_id_selecionada %}
+            {% set estado.rua_id = posicao.nivel.modulo.predio.rua.id %}
+            {% set estado.predio_id = posicao.nivel.modulo.predio.id %}
+            {% set estado.modulo_id = posicao.nivel.modulo.id %}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+{% if endereco_atual %}
+    {% set estado.endereco_atual_texto =
+        endereco_atual.posicao.nivel.modulo.predio.rua.nome
+        ~ ' → '
+        ~ endereco_atual.posicao.nivel.modulo.predio.nome
+        ~ ' → '
+        ~ endereco_atual.posicao.nivel.modulo.nome
+        ~ ' → '
+        ~ endereco_atual.posicao.nome
+    %}
+{% endif %}
+
+<div
+    id="estado-inicial"
+    data-rua-id="{{ estado.rua_id }}"
+    data-predio-id="{{ estado.predio_id }}"
+    data-modulo-id="{{ estado.modulo_id }}"
+    data-posicao-id="{{ posicao_id_selecionada or '' }}"
+    data-multiplos-enderecos="{{ '1' if multiplos_enderecos else '0' }}">
+</div>
+
+<div class="container mt-3">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">
+            Endereçamento por Estrutura
+        </h2>
+
+        <span class="badge text-bg-warning">
+            TESTE
+        </span>
+    </div>
+
+    <p class="text-muted mb-3">
+        Selecione o produto e a posição pela estrutura.
+    </p>
+
+    <form
+        method="POST"
+        id="form-endereco-estrutura">
+
+        <input
+            type="hidden"
+            name="produto_id"
+            id="produto_id"
+            value="{{ produto_id_selecionado or '' }}">
+
+        <input
+            type="hidden"
+            name="posicao_id"
+            id="posicao_id"
+            value="{{ posicao_id_selecionada or '' }}">
+
+        <div class="mb-3 position-relative">
+
+            <label
+                for="produto_busca"
+                class="form-label">
+                Produto
+            </label>
+
+            <input
+                type="text"
+                id="produto_busca"
+                class="form-control"
+                placeholder="Código, barras ou descrição"
+                autocomplete="off"
+                value="{{ estado.produto_texto }}">
+
+            <div class="form-text">
+                Digite ao menos 2 caracteres.
+            </div>
+
+            <div
+                id="produto-resultados"
+                class="list-group position-absolute w-100 shadow-sm d-none"
+                style="z-index: 1050; max-height: 260px; overflow-y: auto;">
+            </div>
+
+        </div>
+
+        <div
+            id="produto-selecionado"
+            class="alert {% if estado.produto_enderecado %}alert-success{% else %}alert-secondary{% endif %} py-2 mb-2 {% if not produto_id_selecionado %}d-none{% endif %}">
+
+            {% if produto_id_selecionado %}
+                <div class="fw-semibold">
+                    {{ estado.produto_texto }}
+                </div>
+
+                <div class="small mt-1">
+                    {% if estado.produto_enderecado %}
+                        JÁ ENDEREÇADO
+                    {% else %}
+                        SEM ENDEREÇO
+                    {% endif %}
+                </div>
+            {% endif %}
+
+        </div>
+
+        <div
+            id="endereco-atual"
+            class="alert alert-light border py-2 mb-3 {% if not modo_alteracao %}d-none{% endif %}">
+
+            {% if modo_alteracao and estado.endereco_atual_texto %}
+                <div class="small text-muted">
+                    Endereço atual
+                </div>
+
+                <div class="fw-semibold">
+                    {{ estado.endereco_atual_texto }}
+                </div>
+            {% endif %}
+
+        </div>
+
+        <div
+            id="alerta-multiplos"
+            class="alert alert-warning py-2 mb-3 {% if not multiplos_enderecos %}d-none{% endif %}">
+            Este produto possui mais de um endereço cadastrado.
+            Gerencie os endereços antes de alterar.
+        </div>
+
+        <div class="mb-3">
+
+            <label
+                for="rua_id"
+                class="form-label">
+                Rua
+            </label>
+
+            <select
+                id="rua_id"
+                class="form-select">
+
+                <option value="">
+                    Selecione a rua
+                </option>
+
+                {% for rua in ruas %}
+                    <option
+                        value="{{ rua.id }}"
+                        {% if estado.rua_id and rua.id|string == estado.rua_id|string %}selected{% endif %}>
+                        {{ rua.nome }}
+                    </option>
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+        <div class="mb-3">
+
+            <label
+                for="predio_id"
+                class="form-label">
+                Prédio
+            </label>
+
+            <select
+                id="predio_id"
+                class="form-select"
+                disabled>
+
+                <option value="">
+                    Selecione primeiro uma rua
+                </option>
+
+            </select>
+
+        </div>
+
+        <div class="mb-3">
+
+            <label
+                for="modulo_id"
+                class="form-label">
+                Módulo
+            </label>
+
+            <select
+                id="modulo_id"
+                class="form-select"
+                disabled>
+
+                <option value="">
+                    Selecione primeiro um prédio
+                </option>
+
+            </select>
+
+        </div>
+
+        <div class="mb-3">
+
+            <label
+                for="posicao_select"
+                class="form-label">
+                Posição
+            </label>
+
+            <select
+                id="posicao_select"
+                class="form-select"
+                disabled>
+
+                <option value="">
+                    Selecione primeiro um módulo
+                </option>
+
+            </select>
+
+            <div
+                id="posicao-status"
+                class="form-text">
+            </div>
+
+        </div>
+
+        {% if conflito %}
+
+            <div class="alert alert-warning">
+
+                <div class="fw-semibold mb-1">
+                    Posição ocupada
+                </div>
+
+                <div>
+                    Esta posição está vinculada a:
+                </div>
+
+                <div class="mt-1">
+                    <strong>
+                        {{ conflito.produto_atual.codigo }}
+                        -
+                        {{ conflito.produto_atual.descricao }}
+                    </strong>
+                </div>
+
+                <div class="mt-2">
+                    Deseja substituir o produto atual?
+                </div>
+
+            </div>
+
+            <div class="row g-2 align-items-stretch mb-4">
+
+                <div class="col-6 d-flex">
+
+                    <a
+                        href="{{ url_for('endereco.novo_estrutura') }}"
+                        class="btn btn-secondary w-100 d-flex align-items-center justify-content-center">
+                        Cancelar
+                    </a>
+
+                </div>
+
+                <div class="col-6 d-flex">
+
+                    <button
+                        type="submit"
+                        name="confirmar_substituicao"
+                        value="sim"
+                        class="btn btn-warning w-100 d-flex align-items-center justify-content-center">
+                        Substituir
+                    </button>
+
+                </div>
+
+            </div>
+
+        {% else %}
+
+            <div class="row g-2 align-items-stretch mb-4">
+
+                <div class="col-6 d-flex">
+
+                    <button
+                        type="submit"
+                        id="btn-salvar"
+                        class="btn btn-success w-100 d-flex align-items-center justify-content-center">
+                        Salvar
+                    </button>
+
+                </div>
+
+                <div class="col-6 d-flex">
+
+                    <a
+                        href="{{ url_for('endereco.listar') }}"
+                        class="btn btn-secondary w-100 d-flex align-items-center justify-content-center">
+                        Cancelar
+                    </a>
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+    </form>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const produtoBusca = document.getElementById("produto_busca");
+    const produtoId = document.getElementById("produto_id");
+    const produtoResultados = document.getElementById("produto-resultados");
+    const produtoSelecionado = document.getElementById("produto-selecionado");
+    const enderecoAtual = document.getElementById("endereco-atual");
+    const alertaMultiplos = document.getElementById("alerta-multiplos");
+    const btnSalvar = document.getElementById("btn-salvar");
+
+    const ruaSelect = document.getElementById("rua_id");
+    const predioSelect = document.getElementById("predio_id");
+    const moduloSelect = document.getElementById("modulo_id");
+    const posicaoSelect = document.getElementById("posicao_select");
+    const posicaoId = document.getElementById("posicao_id");
+    const posicaoStatus = document.getElementById("posicao-status");
+
+    const estadoInicial = document.getElementById("estado-inicial");
+
+    const predioInicial = estadoInicial.dataset.predioId;
+    const moduloInicial = estadoInicial.dataset.moduloId;
+    const posicaoInicial = estadoInicial.dataset.posicaoId;
+    const multiplosInicial = (
+        estadoInicial.dataset.multiplosEnderecos === "1"
+    );
+
+    let timerProduto = null;
+
+    function escaparHtml(texto) {
+        const div = document.createElement("div");
+        div.textContent = texto ?? "";
+        return div.innerHTML;
+    }
+
+    function mostrarEnderecoAtual(texto) {
+
+        if (!texto) {
+            enderecoAtual.classList.add("d-none");
+            enderecoAtual.innerHTML = "";
+            return;
+        }
+
+        enderecoAtual.innerHTML = (
+            '<div class="small text-muted">'
+            + 'Endereço atual'
+            + '</div>'
+            + '<div class="fw-semibold">'
+            + escaparHtml(texto)
+            + '</div>'
+        );
+
+        enderecoAtual.classList.remove("d-none");
+    }
+
+    function definirBloqueioMultiplos(bloquear) {
+
+        if (bloquear) {
+            alertaMultiplos.classList.remove("d-none");
+
+            ruaSelect.disabled = true;
+            predioSelect.disabled = true;
+            moduloSelect.disabled = true;
+            posicaoSelect.disabled = true;
+
+            if (btnSalvar) {
+                btnSalvar.disabled = true;
+            }
+
+            return;
+        }
+
+        alertaMultiplos.classList.add("d-none");
+        ruaSelect.disabled = false;
+
+        if (btnSalvar) {
+            btnSalvar.disabled = false;
+        }
+    }
+
+    function limparEstrutura() {
+
+        ruaSelect.value = "";
+
+        limparSelect(
+            predioSelect,
+            "Selecione primeiro uma rua"
+        );
+
+        limparSelect(
+            moduloSelect,
+            "Selecione primeiro um prédio"
+        );
+
+        limparSelect(
+            posicaoSelect,
+            "Selecione primeiro um módulo"
+        );
+
+        posicaoId.value = "";
+        posicaoStatus.textContent = "";
+    }
+
+    function limparSelect(
+        select,
+        mensagem
+    ) {
+        select.innerHTML = "";
+
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = mensagem;
+
+        select.appendChild(option);
+        select.disabled = true;
+    }
+
+    function preencherSelect(
+        select,
+        itens,
+        mensagem,
+        valorSelecionado = ""
+    ) {
+        select.innerHTML = "";
+
+        const optionInicial = document.createElement("option");
+        optionInicial.value = "";
+        optionInicial.textContent = mensagem;
+        select.appendChild(optionInicial);
+
+        itens.forEach(function (item) {
+
+            const option = document.createElement("option");
+            option.value = item.id;
+            option.textContent = item.nome;
+
+            if (
+                valorSelecionado
+                && String(item.id) === String(valorSelecionado)
+            ) {
+                option.selected = true;
+            }
+
+            select.appendChild(option);
+        });
+
+        select.disabled = false;
+    }
+
+    function limparAbaixoDaRua() {
+        limparSelect(
+            predioSelect,
+            "Selecione primeiro uma rua"
+        );
+
+        limparSelect(
+            moduloSelect,
+            "Selecione primeiro um prédio"
+        );
+
+        limparSelect(
+            posicaoSelect,
+            "Selecione primeiro um módulo"
+        );
+
+        posicaoId.value = "";
+        posicaoStatus.textContent = "";
+    }
+
+    function limparAbaixoDoPredio() {
+        limparSelect(
+            moduloSelect,
+            "Selecione primeiro um prédio"
+        );
+
+        limparSelect(
+            posicaoSelect,
+            "Selecione primeiro um módulo"
+        );
+
+        posicaoId.value = "";
+        posicaoStatus.textContent = "";
+    }
+
+    function limparAbaixoDoModulo() {
+        limparSelect(
+            posicaoSelect,
+            "Selecione primeiro um módulo"
+        );
+
+        posicaoId.value = "";
+        posicaoStatus.textContent = "";
+    }
+
+    async function carregarPredios(
+        ruaId,
+        valorSelecionado = ""
+    ) {
+        if (!ruaId) {
+            limparAbaixoDaRua();
+            return;
+        }
+
+        limparSelect(
+            predioSelect,
+            "Carregando..."
+        );
+
+        limparSelect(
+            moduloSelect,
+            "Selecione primeiro um prédio"
+        );
+
+        limparSelect(
+            posicaoSelect,
+            "Selecione primeiro um módulo"
+        );
+
+        posicaoId.value = "";
+        posicaoStatus.textContent = "";
+
+        const resposta = await fetch(
+            "{{ url_for('endereco.estrutura_predios') }}"
+            + "?rua_id="
+            + encodeURIComponent(ruaId)
+        );
+
+        const dados = await resposta.json();
+
+        preencherSelect(
+            predioSelect,
+            dados,
+            "Selecione o prédio",
+            valorSelecionado
+        );
+    }
+
+    async function carregarModulos(
+        predioId,
+        valorSelecionado = ""
+    ) {
+        if (!predioId) {
+            limparAbaixoDoPredio();
+            return;
+        }
+
+        limparSelect(
+            moduloSelect,
+            "Carregando..."
+        );
+
+        limparSelect(
+            posicaoSelect,
+            "Selecione primeiro um módulo"
+        );
+
+        posicaoId.value = "";
+        posicaoStatus.textContent = "";
+
+        const resposta = await fetch(
+            "{{ url_for('endereco.estrutura_modulos') }}"
+            + "?predio_id="
+            + encodeURIComponent(predioId)
+        );
+
+        const dados = await resposta.json();
+
+        preencherSelect(
+            moduloSelect,
+            dados,
+            "Selecione o módulo",
+            valorSelecionado
+        );
+    }
+
+    async function carregarPosicoes(
+        moduloId,
+        valorSelecionado = ""
+    ) {
+        if (!moduloId) {
+            limparAbaixoDoModulo();
+            return;
+        }
+
+        limparSelect(
+            posicaoSelect,
+            "Carregando..."
+        );
+
+        posicaoId.value = "";
+        posicaoStatus.textContent = "";
+
+        const resposta = await fetch(
+            "{{ url_for('endereco.estrutura_posicoes') }}"
+            + "?modulo_id="
+            + encodeURIComponent(moduloId)
+        );
+
+        const dados = await resposta.json();
+
+        posicaoSelect.innerHTML = "";
+
+        const optionInicial = document.createElement("option");
+        optionInicial.value = "";
+        optionInicial.textContent = "Selecione a posição";
+        posicaoSelect.appendChild(optionInicial);
+
+        dados.forEach(function (item) {
+
+            const option = document.createElement("option");
+            option.value = item.id;
+
+            if (item.ocupada && item.produto) {
+                option.textContent = (
+                    item.nome
+                    + " — OCUPADA: "
+                    + item.produto.codigo
+                    + " - "
+                    + item.produto.descricao
+                );
+                option.dataset.ocupada = "1";
+                option.dataset.produto = (
+                    item.produto.codigo
+                    + " - "
+                    + item.produto.descricao
+                );
+            } else {
+                option.textContent = item.nome;
+                option.dataset.ocupada = "0";
+            }
+
+            if (
+                valorSelecionado
+                && String(item.id) === String(valorSelecionado)
+            ) {
+                option.selected = true;
+            }
+
+            posicaoSelect.appendChild(option);
+        });
+
+        posicaoSelect.disabled = false;
+
+        if (valorSelecionado) {
+            posicaoId.value = valorSelecionado;
+            atualizarStatusPosicao();
+        }
+    }
+
+    function atualizarStatusPosicao() {
+
+        const option = posicaoSelect.options[
+            posicaoSelect.selectedIndex
+        ];
+
+        posicaoId.value = posicaoSelect.value;
+
+        if (!posicaoSelect.value) {
+            posicaoStatus.textContent = "";
+            return;
+        }
+
+        if (option.dataset.ocupada === "1") {
+            posicaoStatus.textContent = (
+                "Posição ocupada por "
+                + option.dataset.produto
+                + "."
+            );
+        } else {
+            posicaoStatus.textContent = "Posição livre.";
+        }
+    }
+
+    ruaSelect.addEventListener("change", async function () {
+        await carregarPredios(
+            ruaSelect.value
+        );
+    });
+
+    predioSelect.addEventListener("change", async function () {
+        await carregarModulos(
+            predioSelect.value
+        );
+    });
+
+    moduloSelect.addEventListener("change", async function () {
+        await carregarPosicoes(
+            moduloSelect.value
+        );
+    });
+
+    posicaoSelect.addEventListener("change", function () {
+        atualizarStatusPosicao();
+    });
+
+    function limparProdutoSelecionado() {
+
+        produtoId.value = "";
+
+        produtoSelecionado.classList.add("d-none");
+
+        produtoSelecionado.classList.remove(
+            "alert-success",
+            "alert-secondary"
+        );
+
+        produtoSelecionado.innerHTML = "";
+
+        mostrarEnderecoAtual("");
+        definirBloqueioMultiplos(false);
+    }
+
+    async function mostrarProdutoSelecionado(produto) {
+
+        produtoId.value = produto.id;
+
+        produtoBusca.value = (
+            produto.codigo
+            + " - "
+            + produto.descricao
+        );
+
+        produtoSelecionado.classList.remove(
+            "alert-success",
+            "alert-secondary"
+        );
+
+        if (produto.enderecado) {
+
+            produtoSelecionado.classList.add(
+                "alert-success"
+            );
+
+            produtoSelecionado.innerHTML = (
+                '<div class="fw-semibold">'
+                + escaparHtml(produto.codigo)
+                + " - "
+                + escaparHtml(produto.descricao)
+                + '</div>'
+                + '<div class="small mt-1">'
+                + 'JÁ ENDEREÇADO'
+                + '</div>'
+            );
+
+        } else {
+
+            produtoSelecionado.classList.add(
+                "alert-secondary"
+            );
+
+            produtoSelecionado.innerHTML = (
+                '<div class="fw-semibold">'
+                + escaparHtml(produto.codigo)
+                + " - "
+                + escaparHtml(produto.descricao)
+                + '</div>'
+                + '<div class="small mt-1">'
+                + 'SEM ENDEREÇO'
+                + '</div>'
+            );
+        }
+
+        produtoSelecionado.classList.remove(
+            "d-none"
+        );
+
+        produtoResultados.classList.add(
+            "d-none"
+        );
+
+        produtoResultados.innerHTML = "";
+
+        if (produto.multiplos_enderecos) {
+
+            mostrarEnderecoAtual("");
+            limparEstrutura();
+            definirBloqueioMultiplos(true);
+
+        } else if (produto.endereco_atual) {
+
+            definirBloqueioMultiplos(false);
+
+            mostrarEnderecoAtual(
+                produto.endereco_atual.endereco
+            );
+
+            ruaSelect.value = (
+                produto.endereco_atual.rua_id
+            );
+
+            await carregarPredios(
+                produto.endereco_atual.rua_id,
+                produto.endereco_atual.predio_id
+            );
+
+            await carregarModulos(
+                produto.endereco_atual.predio_id,
+                produto.endereco_atual.modulo_id
+            );
+
+            await carregarPosicoes(
+                produto.endereco_atual.modulo_id,
+                produto.endereco_atual.posicao_id
+            );
+
+        } else {
+
+            definirBloqueioMultiplos(false);
+            mostrarEnderecoAtual("");
+            limparEstrutura();
+        }
+
+        produtoBusca.blur();
+    }
+
+    async function pesquisarProdutos(termo) {
+
+        if (termo.length < 2) {
+
+            produtoResultados.classList.add(
+                "d-none"
+            );
+
+            produtoResultados.innerHTML = "";
+
+            return;
+        }
+
+        const resposta = await fetch(
+            "{{ url_for('endereco.buscar_produtos') }}"
+            + "?q="
+            + encodeURIComponent(termo)
+        );
+
+        const dados = await resposta.json();
+
+        produtoResultados.innerHTML = "";
+
+        if (!dados.length) {
+
+            produtoResultados.innerHTML =
+                '<div class="list-group-item text-muted">'
+                + 'Nenhum produto encontrado.'
+                + '</div>';
+
+            produtoResultados.classList.remove(
+                "d-none"
+            );
+
+            return;
+        }
+
+        dados.forEach(function (produto) {
+
+            const botao = document.createElement(
+                "button"
+            );
+
+            botao.type = "button";
+
+            botao.className = (
+                "list-group-item list-group-item-action"
+            );
+
+            let complemento = "";
+
+            if (produto.codigo_barras) {
+
+                complemento = (
+                    '<div class="small text-muted">'
+                    + escaparHtml(
+                        produto.codigo_barras
+                    )
+                    + '</div>'
+                );
+            }
+
+            if (produto.enderecado) {
+
+                complemento += (
+                    '<div class="small text-success">'
+                    + 'Já endereçado'
+                    + '</div>'
+                );
+
+            } else {
+
+                complemento += (
+                    '<div class="small text-secondary">'
+                    + 'Sem endereço'
+                    + '</div>'
+                );
+            }
+
+            botao.innerHTML =
+                '<div class="fw-semibold">'
+                + escaparHtml(produto.codigo)
+                + ' - '
+                + escaparHtml(produto.descricao)
+                + '</div>'
+                + complemento;
+
+            botao.addEventListener(
+                "click",
+                async function () {
+
+                    await mostrarProdutoSelecionado(
+                        produto
+                    );
+                }
+            );
+
+            produtoResultados.appendChild(
+                botao
+            );
+        });
+
+        produtoResultados.classList.remove(
+            "d-none"
+        );
+    }
+
+    produtoBusca.addEventListener(
+        "input",
+        function () {
+
+            clearTimeout(
+                timerProduto
+            );
+
+            const termo = produtoBusca.value.trim();
+
+            limparProdutoSelecionado();
+
+            if (termo.length < 2) {
+
+                produtoResultados.classList.add(
+                    "d-none"
+                );
+
+                produtoResultados.innerHTML = "";
+
+                return;
+            }
+
+            timerProduto = setTimeout(
+                function () {
+
+                    pesquisarProdutos(
+                        termo
+                    );
+
+                },
+                300
+            );
+        }
+    );
+
+    produtoBusca.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (event.key !== "Enter") {
+                return;
+            }
+
+            event.preventDefault();
+
+            clearTimeout(
+                timerProduto
+            );
+
+            const termo = produtoBusca.value.trim();
+
+            if (termo.length < 2) {
+                return;
+            }
+
+            pesquisarProdutos(
+                termo
+            );
+        }
+    );
+
+    document.addEventListener("click", function (event) {
+
+        if (
+            !produtoBusca.contains(event.target)
+            && !produtoResultados.contains(event.target)
+        ) {
+            produtoResultados.classList.add("d-none");
+        }
+    });
+
+    document
+        .getElementById("form-endereco-estrutura")
+        .addEventListener("submit", function (event) {
+
+            if (!produtoId.value || !posicaoId.value) {
+                event.preventDefault();
+
+                alert(
+                    "Selecione o produto e a posição."
+                );
+            }
+        });
+
+    async function carregarEstadoInicial() {
+
+        if (!ruaSelect.value) {
+            return;
+        }
+
+        await carregarPredios(
+            ruaSelect.value,
+            predioInicial
+        );
+
+        if (!predioInicial) {
+            return;
+        }
+
+        await carregarModulos(
+            predioInicial,
+            moduloInicial
+        );
+
+        if (!moduloInicial) {
+            return;
+        }
+
+        await carregarPosicoes(
+            moduloInicial,
+            posicaoInicial
+        );
+    }
+
+    if (multiplosInicial) {
+        definirBloqueioMultiplos(true);
+    }
+
+    carregarEstadoInicial();
+});
+</script>
+
+{% endblock %}

@@ -1,7 +1,17 @@
 import csv
 import io
+from secrets import compare_digest, token_urlsafe
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    flash,
+    redirect,
+    render_template,
+    render_template_string,
+    request,
+    session,
+    url_for
+)
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
@@ -9,7 +19,8 @@ from app import db
 from app.models import (
     DivergenciaCodigoBarras,
     Produto,
-    ProdutoEndereco
+    ProdutoEndereco,
+    Usuario
 )
 
 
@@ -980,47 +991,163 @@ def editar(id):
 
 
 @produto_bp.route(
-    "/excluir/<int:id>"
+    "/excluir/<int:id>",
+    methods=["GET", "POST"]
 )
 def excluir(id):
 
-    produto = (
-        Produto.query
-        .get_or_404(
-            id
-        )
-    )
+    if not session.get("usuario_id"):
+        return redirect(url_for("auth.login"))
 
-    try:
+    administrador = Usuario.query.filter_by(
+        id=session.get("usuario_id"),
+        ativo=True,
+        perfil="ADMINISTRADOR"
+    ).first()
 
-        db.session.delete(
-            produto
-        )
-
-        db.session.commit()
-
-    except IntegrityError:
-
-        db.session.rollback()
+    if not administrador:
 
         flash(
-            "Não foi possível remover o produto.",
+            "Apenas administradores podem excluir produtos.",
             "danger"
         )
 
-        return redirect(
-            url_for(
-                "produto.listar"
+        return redirect(url_for("produto.listar"))
+
+    produto = Produto.query.get_or_404(id)
+
+    if request.method == "POST":
+
+        token_recebido = request.form.get("csrf_token", "")
+        token_sessao = session.get("csrf_exclusao_produto", "")
+
+        token_valido = (
+            isinstance(token_recebido, str)
+            and isinstance(token_sessao, str)
+            and bool(token_recebido)
+            and bool(token_sessao)
+            and compare_digest(
+                token_recebido.encode("utf-8"),
+                token_sessao.encode("utf-8")
             )
         )
 
-    flash(
-        "Produto removido com sucesso.",
-        "success"
-    )
+        if not token_valido:
 
-    return redirect(
-        url_for(
-            "produto.listar"
+            flash(
+                "A confirmação expirou. Tente novamente.",
+                "warning"
+            )
+
+            return redirect(url_for("produto.excluir", id=produto.id))
+
+        senha = request.form.get("senha", "")
+
+        if not senha or not administrador.verificar_senha(senha):
+
+            flash(
+                "Senha incorreta. O produto não foi excluído.",
+                "danger"
+            )
+
+            return redirect(url_for("produto.excluir", id=produto.id))
+
+        try:
+
+            db.session.delete(produto)
+            db.session.commit()
+
+        except IntegrityError:
+
+            db.session.rollback()
+
+            flash(
+                "Não foi possível remover o produto.",
+                "danger"
+            )
+
+            return redirect(url_for("produto.listar"))
+
+        session.pop("csrf_exclusao_produto", None)
+
+        flash(
+            "Produto removido com sucesso.",
+            "success"
         )
+
+        return redirect(url_for("produto.listar"))
+
+    token = session.get("csrf_exclusao_produto")
+
+    if not isinstance(token, str) or not token:
+        token = token_urlsafe(32)
+        session["csrf_exclusao_produto"] = token
+
+    return render_template_string(
+        """
+        {% extends "base.html" %}
+
+        {% block title %}Excluir produto - SIGE{% endblock %}
+
+        {% block content %}
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        Excluir produto
+                    </div>
+                    <div class="card-body">
+                        <h5 class="text-break">
+                            {{ produto.codigo }} - {{ produto.descricao }}
+                        </h5>
+
+                        <div class="alert alert-warning">
+                            A exclusão é definitiva.
+                            {% if total_enderecos %}
+                                Também serão removidos
+                                {{ total_enderecos }} endereçamento(s).
+                            {% endif %}
+                        </div>
+
+                        <form method="POST"
+                              action="{{ url_for('produto.excluir', id=produto.id) }}">
+                            <input type="hidden"
+                                   name="csrf_token"
+                                   value="{{ csrf_token }}">
+
+                            <div class="mb-3">
+                                <label for="senha" class="form-label">
+                                    Senha do administrador conectado
+                                </label>
+                                <input type="password"
+                                       class="form-control form-control-lg"
+                                       id="senha"
+                                       name="senha"
+                                       autocomplete="current-password"
+                                       required>
+                                <div class="form-text">
+                                    Informe a senha de {{ administrador.nome }}.
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-danger btn-lg">
+                                    Confirmar exclusão
+                                </button>
+                                <a href="{{ url_for('produto.listar') }}"
+                                   class="btn btn-outline-secondary btn-lg">
+                                    Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endblock %}
+        """,
+        produto=produto,
+        administrador=administrador,
+        total_enderecos=len(produto.enderecos),
+        csrf_token=token
     )

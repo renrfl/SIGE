@@ -10,67 +10,56 @@ Nova Posição
 
 {% block content %}
 
-<div class="container mt-4">
+<div class="container mt-3">
 
-    <h2>
-
+    <h2 class="mb-3">
         {% if posicao %}
             Editar Posição
         {% else %}
             Nova Posição
         {% endif %}
-
     </h2>
 
-    <form method="POST">
+    <form method="POST" id="form-posicao">
 
         <div class="mb-3">
 
-            <label class="form-label">
-                Nome
+            <label for="nome" class="form-label">
+                Nome da posição
             </label>
 
             <input
                 type="text"
+                id="nome"
                 name="nome"
                 class="form-control"
                 required
+                autocomplete="off"
                 value="{{ posicao.nome if posicao else '' }}">
 
         </div>
 
         <div class="mb-3">
 
-            <label class="form-label">
-                Nível
+            <label for="rua_id" class="form-label">
+                Rua
             </label>
 
             <select
-                name="nivel_id"
+                id="rua_id"
                 class="form-select"
                 required>
 
                 <option value="">
-                    Selecione...
+                    Selecione a rua...
                 </option>
 
-                {% for nivel in niveis %}
+                {% for rua in ruas %}
 
                     <option
-                        value="{{ nivel.id }}"
-                        {% if posicao and posicao.nivel_id == nivel.id %}selected{% endif %}>
-
-                        {{ nivel.modulo.predio.rua.nome }}
-                        →
-                        {{ nivel.modulo.predio.nome }}
-                        →
-                        {{ nivel.modulo.nome }}
-                        →
-                        {{ nivel.nome }}
-                        {% if nivel.posicoes_cadastradas %}
-                            — POSIÇÕES: {{ nivel.posicoes_cadastradas }}
-                        {% endif %}
-
+                        value="{{ rua.id }}"
+                        {% if rua_id_selecionada is defined and rua_id_selecionada == rua.id %}selected{% endif %}>
+                        {{ rua.nome }}
                     </option>
 
                 {% endfor %}
@@ -79,24 +68,322 @@ Nova Posição
 
         </div>
 
-        <button
-            type="submit"
-            class="btn btn-success">
+        <div class="mb-3">
 
-            Salvar
+            <label for="predio_id" class="form-label">
+                Prédio
+            </label>
 
-        </button>
+            <select
+                id="predio_id"
+                class="form-select"
+                required
+                disabled>
 
-        <a
-            href="{{ url_for('posicao.listar') }}"
-            class="btn btn-secondary">
+                <option value="">
+                    Selecione primeiro uma rua
+                </option>
 
-            Cancelar
+            </select>
 
-        </a>
+        </div>
+
+        <div class="mb-3">
+
+            <label for="modulo_id" class="form-label">
+                Módulo
+            </label>
+
+            <select
+                id="modulo_id"
+                name="modulo_id"
+                class="form-select"
+                required
+                disabled>
+
+                <option value="">
+                    Selecione primeiro um prédio
+                </option>
+
+            </select>
+
+        </div>
+
+        <div
+            id="resumo-posicoes"
+            class="mb-3 d-none">
+
+            <div class="border rounded px-3 py-2 bg-light">
+                <strong>Posições existentes:</strong>
+                <span id="total-posicoes">0</span>
+            </div>
+
+            <div
+                id="aviso-modulo"
+                class="alert alert-warning mt-2 mb-0 d-none"
+                role="alert">
+            </div>
+
+        </div>
+
+        <div class="row g-2 align-items-stretch mt-1 mb-4">
+
+            <div class="col-6 d-flex">
+
+                <button
+                    type="submit"
+                    id="btn-salvar"
+                    class="btn btn-success w-100 d-flex align-items-center justify-content-center">
+                    Salvar
+                </button>
+
+            </div>
+
+            <div class="col-6 d-flex">
+
+                <a
+                    href="{{ url_for('posicao.listar') }}"
+                    class="btn btn-secondary w-100 d-flex align-items-center justify-content-center">
+                    Cancelar
+                </a>
+
+            </div>
+
+        </div>
 
     </form>
 
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const ruaSelect = document.getElementById("rua_id");
+        const predioSelect = document.getElementById("predio_id");
+        const moduloSelect = document.getElementById("modulo_id");
+        const resumoPosicoes = document.getElementById("resumo-posicoes");
+        const totalPosicoes = document.getElementById("total-posicoes");
+        const avisoModulo = document.getElementById("aviso-modulo");
+        const btnSalvar = document.getElementById("btn-salvar");
+
+        const urlPredios = "{{ url_for('posicao.opcoes_predios') }}";
+        const urlModulos = "{{ url_for('posicao.opcoes_modulos') }}";
+        const urlDadosModulo = "{{ url_for('posicao.dados_modulo') }}";
+
+        const predioInicial = "{{ predio_id_selecionado if predio_id_selecionado is defined else '' }}";
+        const moduloInicial = "{{ modulo_id_selecionado if modulo_id_selecionado is defined else '' }}";
+
+        function limparSelect(select, texto) {
+            select.innerHTML = "";
+
+            const option = document.createElement("option");
+            option.value = "";
+            option.textContent = texto;
+
+            select.appendChild(option);
+            select.disabled = true;
+        }
+
+        function preencherSelect(select, itens, textoInicial, valorSelecionado = "") {
+            select.innerHTML = "";
+
+            const optionInicial = document.createElement("option");
+            optionInicial.value = "";
+            optionInicial.textContent = textoInicial;
+            select.appendChild(optionInicial);
+
+            itens.forEach(function (item) {
+                const option = document.createElement("option");
+                option.value = item.id;
+                option.textContent = item.nome;
+
+                if (String(item.id) === String(valorSelecionado)) {
+                    option.selected = true;
+                }
+
+                select.appendChild(option);
+            });
+
+            select.disabled = false;
+        }
+
+        function ocultarResumo() {
+            resumoPosicoes.classList.add("d-none");
+            avisoModulo.classList.add("d-none");
+            avisoModulo.textContent = "";
+            totalPosicoes.textContent = "0";
+            btnSalvar.disabled = false;
+        }
+
+        async function carregarPredios(ruaId, valorSelecionado = "") {
+            limparSelect(
+                predioSelect,
+                "Carregando prédios..."
+            );
+
+            limparSelect(
+                moduloSelect,
+                "Selecione primeiro um prédio"
+            );
+
+            ocultarResumo();
+
+            if (!ruaId) {
+                limparSelect(
+                    predioSelect,
+                    "Selecione primeiro uma rua"
+                );
+                return;
+            }
+
+            try {
+                const resposta = await fetch(
+                    `${urlPredios}?rua_id=${encodeURIComponent(ruaId)}`
+                );
+
+                if (!resposta.ok) {
+                    throw new Error("Falha ao carregar prédios.");
+                }
+
+                const predios = await resposta.json();
+
+                preencherSelect(
+                    predioSelect,
+                    predios,
+                    "Selecione o prédio...",
+                    valorSelecionado
+                );
+            } catch (erro) {
+                limparSelect(
+                    predioSelect,
+                    "Não foi possível carregar os prédios"
+                );
+            }
+        }
+
+        async function carregarModulos(predioId, valorSelecionado = "") {
+            limparSelect(
+                moduloSelect,
+                "Carregando módulos..."
+            );
+
+            ocultarResumo();
+
+            if (!predioId) {
+                limparSelect(
+                    moduloSelect,
+                    "Selecione primeiro um prédio"
+                );
+                return;
+            }
+
+            try {
+                const resposta = await fetch(
+                    `${urlModulos}?predio_id=${encodeURIComponent(predioId)}`
+                );
+
+                if (!resposta.ok) {
+                    throw new Error("Falha ao carregar módulos.");
+                }
+
+                const modulos = await resposta.json();
+
+                preencherSelect(
+                    moduloSelect,
+                    modulos,
+                    "Selecione o módulo...",
+                    valorSelecionado
+                );
+            } catch (erro) {
+                limparSelect(
+                    moduloSelect,
+                    "Não foi possível carregar os módulos"
+                );
+            }
+        }
+
+        async function carregarDadosModulo(moduloId) {
+            ocultarResumo();
+
+            if (!moduloId) {
+                return;
+            }
+
+            resumoPosicoes.classList.remove("d-none");
+            totalPosicoes.textContent = "...";
+
+            try {
+                const resposta = await fetch(
+                    `${urlDadosModulo}?modulo_id=${encodeURIComponent(moduloId)}`
+                );
+
+                const dados = await resposta.json();
+
+                if (!resposta.ok || !dados.valido) {
+                    totalPosicoes.textContent = "-";
+                    avisoModulo.textContent = dados.mensagem || "Não foi possível validar este módulo.";
+                    avisoModulo.classList.remove("d-none");
+                    btnSalvar.disabled = true;
+                    return;
+                }
+
+                totalPosicoes.textContent = dados.total_posicoes;
+                btnSalvar.disabled = false;
+            } catch (erro) {
+                totalPosicoes.textContent = "-";
+                avisoModulo.textContent = "Não foi possível consultar as posições deste módulo.";
+                avisoModulo.classList.remove("d-none");
+                btnSalvar.disabled = true;
+            }
+        }
+
+        ruaSelect.addEventListener("change", async function () {
+            await carregarPredios(
+                ruaSelect.value
+            );
+        });
+
+        predioSelect.addEventListener("change", async function () {
+            await carregarModulos(
+                predioSelect.value
+            );
+        });
+
+        moduloSelect.addEventListener("change", async function () {
+            await carregarDadosModulo(
+                moduloSelect.value
+            );
+        });
+
+        async function carregarEdicao() {
+            if (!ruaSelect.value) {
+                return;
+            }
+
+            await carregarPredios(
+                ruaSelect.value,
+                predioInicial
+            );
+
+            if (!predioInicial) {
+                return;
+            }
+
+            await carregarModulos(
+                predioInicial,
+                moduloInicial
+            );
+
+            if (moduloInicial) {
+                await carregarDadosModulo(
+                    moduloInicial
+                );
+            }
+        }
+
+        carregarEdicao();
+
+    });
+</script>
 
 {% endblock %}

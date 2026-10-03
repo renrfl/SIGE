@@ -1,4 +1,6 @@
-from flask import Flask, redirect, request, session, url_for
+from datetime import datetime, timezone
+
+from flask import Flask, flash, redirect, request, session, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 
@@ -42,19 +44,91 @@ def create_app():
     @app.before_request
     def proteger_area_administrativa():
 
-        if not request.path.startswith("/admin"):
-            return None
-
         if request.endpoint in (
+            None,
+            "static",
             "auth.login",
-            "static"
+            "auth.logout"
         ):
             return None
 
-        if "usuario_id" not in session:
-            return redirect(
-                url_for("auth.login")
+        acesso_restrito = (
+            request.path == "/admin"
+            or request.path.startswith("/admin/")
+            or request.endpoint in (
+                "consulta.gerenciar_enderecos",
+                "consulta.remover_endereco"
             )
+        )
+
+        usuario_id = session.get("usuario_id")
+
+        if usuario_id is None:
+
+            if acesso_restrito:
+                return redirect(url_for("auth.login"))
+
+            return None
+
+        agora = datetime.now(timezone.utc)
+        mensagem = None
+
+        try:
+
+            ultima_atividade = datetime.fromisoformat(
+                session.get("ultima_atividade", "")
+            )
+
+            if ultima_atividade.tzinfo is None:
+                ultima_atividade = ultima_atividade.replace(
+                    tzinfo=timezone.utc
+                )
+
+            tempo_inativo = agora - ultima_atividade
+
+            if (
+                tempo_inativo.total_seconds() < 0
+                or tempo_inativo >= app.permanent_session_lifetime
+            ):
+                mensagem = (
+                    "Sua sessão expirou por inatividade. "
+                    "Faça login novamente."
+                )
+
+        except (ValueError, TypeError, OverflowError):
+
+            mensagem = (
+                "Sua sessão não é mais válida. "
+                "Faça login novamente."
+            )
+
+        if mensagem is None:
+
+            usuario = None
+
+            if type(usuario_id) is int and usuario_id > 0:
+                usuario = db.session.get(Usuario, usuario_id)
+
+            if not usuario or not usuario.ativo:
+                mensagem = (
+                    "Seu acesso foi encerrado. "
+                    "Faça login com um usuário ativo."
+                )
+
+        if mensagem:
+
+            session.clear()
+            flash(mensagem, "warning")
+
+            if acesso_restrito:
+                return redirect(url_for("auth.login"))
+
+            return None
+
+        session.permanent = True
+        session["usuario_nome"] = usuario.nome
+        session["usuario_perfil"] = usuario.perfil
+        session["ultima_atividade"] = agora.isoformat()
 
         return None
 

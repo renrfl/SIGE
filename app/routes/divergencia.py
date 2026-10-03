@@ -1,12 +1,16 @@
 from flask import (
     Blueprint,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
     session,
     url_for
 )
+
+from sqlalchemy import String, cast, or_
+from sqlalchemy.orm import joinedload
 
 from app import db
 from app.models import (
@@ -22,243 +26,177 @@ divergencia_bp = Blueprint(
 )
 
 
-def calcular_status_produto(
-    produto_id,
-    divergencias_pendentes
-):
-
-    if produto_id in divergencias_pendentes:
-        return "PENDENTE"
-
-    return "CORRETO"
-
-
 @divergencia_bp.route("/")
 def listar():
 
     filtro = request.args.get(
         "status",
-        ""
+        "PENDENTE"
     ).strip().upper()
+
+    if filtro == "DIVERGENCIA":
+        filtro = "HISTORICO"
+
+    if filtro not in (
+        "PENDENTE",
+        "HISTORICO",
+        "CORRIGIDO",
+        "DESCARTADO"
+    ):
+        filtro = "PENDENTE"
 
     pesquisa = request.args.get(
         "q",
         ""
     ).strip()
 
-    produtos_enderecados_ids = {
-        resultado[0]
-        for resultado in (
-            db.session.query(
-                ProdutoEndereco.produto_id
-            )
-            .distinct()
-            .all()
-        )
-    }
-
-    produtos = (
-        Produto.query
-        .filter(
-            Produto.id.in_(
-                produtos_enderecados_ids
-            )
-        )
-        .order_by(
-            Produto.descricao
-        )
-        .all()
-    )
-
     divergencias = (
         DivergenciaCodigoBarras.query
+        .join(Produto)
+        .options(
+            joinedload(DivergenciaCodigoBarras.produto)
+        )
         .order_by(
-            DivergenciaCodigoBarras.data_registro.desc()
+            DivergenciaCodigoBarras.data_registro.desc(),
+            DivergenciaCodigoBarras.id.desc()
         )
         .all()
     )
 
-    divergencias_pendentes = set()
+    totais = {
+        "PENDENTE": 0,
+        "CORRIGIDO": 0,
+        "DESCARTADO": 0,
+        "HISTORICO": 0,
+        "TODOS": 0,
+        "DIVERGENCIA": 0,
+        "CORRETO": 0
+    }
 
-    ultima_divergencia_por_produto = {}
-
-    produtos_com_divergencia = set()
-
-    produtos_corrigidos = set()
-
-    produtos_descartados = set()
+    itens = []
+    termo = pesquisa.casefold()
 
     for divergencia in divergencias:
 
-        produtos_com_divergencia.add(
-            divergencia.produto_id
-        )
-
-        if (
-            divergencia.produto_id
-            not in ultima_divergencia_por_produto
+        if divergencia.status not in (
+            "PENDENTE",
+            "CORRIGIDO",
+            "DESCARTADO"
         ):
+            continue
 
-            ultima_divergencia_por_produto[
-                divergencia.produto_id
-            ] = divergencia
+        totais[divergencia.status] += 1
+        totais["TODOS"] += 1
+        totais["DIVERGENCIA"] += 1
 
-        if divergencia.status == "PENDENTE":
+        if divergencia.status in ("CORRIGIDO", "DESCARTADO"):
+            totais["HISTORICO"] += 1
 
-            divergencias_pendentes.add(
-                divergencia.produto_id
-            )
+        if filtro == "HISTORICO":
 
-        elif divergencia.status == "CORRIGIDO":
-
-            produtos_corrigidos.add(
-                divergencia.produto_id
-            )
-
-        elif divergencia.status == "DESCARTADO":
-
-            produtos_descartados.add(
-                divergencia.produto_id
-            )
-
-    itens = []
-
-    for produto in produtos:
-
-        status = calcular_status_produto(
-            produto.id,
-            divergencias_pendentes
-        )
-
-        ultima_divergencia = (
-            ultima_divergencia_por_produto.get(
-                produto.id
-            )
-        )
-
-        if filtro == "CORRETO":
-
-            if status != "CORRETO":
+            if divergencia.status not in ("CORRIGIDO", "DESCARTADO"):
                 continue
 
-        elif filtro == "PENDENTE":
+        elif divergencia.status != filtro:
+            continue
 
-            if status != "PENDENTE":
-                continue
+        produto = divergencia.produto
 
-        elif filtro == "DIVERGENCIA":
+        if termo:
 
-            if (
-                produto.id
-                not in produtos_com_divergencia
-            ):
-                continue
-
-        elif filtro == "CORRIGIDO":
-
-            if (
-                produto.id
-                not in produtos_corrigidos
-            ):
-                continue
-
-        elif filtro == "DESCARTADO":
-
-            if (
-                produto.id
-                not in produtos_descartados
-            ):
-                continue
-
-        if pesquisa:
-
-            termo = pesquisa.lower()
-
-            valores_pesquisa = [
+            valores_pesquisa = (
                 str(produto.codigo),
                 produto.descricao or "",
-                produto.codigo_barras or ""
-            ]
-
-            if ultima_divergencia:
-
-                valores_pesquisa.append(
-                    ultima_divergencia.codigo_barras_fisico
-                    or ""
-                )
-
-                valores_pesquisa.append(
-                    ultima_divergencia.codigo_barras_cadastrado
-                    or ""
-                )
-
-            encontrado = any(
-                termo in str(valor).lower()
-                for valor in valores_pesquisa
+                produto.codigo_barras or "",
+                divergencia.codigo_barras_cadastrado or "",
+                divergencia.codigo_barras_fisico or ""
             )
 
-            if not encontrado:
+            if not any(
+                termo in valor.casefold()
+                for valor in valores_pesquisa
+            ):
                 continue
 
         itens.append({
             "produto": produto,
-            "status": status,
-            "enderecado": True,
-            "ultima_divergencia": ultima_divergencia
+            "status": divergencia.status,
+            "divergencia": divergencia,
+            "ultima_divergencia": divergencia
         })
-
-    totais = {
-        "TODOS": len(produtos),
-        "CORRETO": 0,
-        "PENDENTE": 0,
-        "DIVERGENCIA": 0,
-        "CORRIGIDO": 0,
-        "DESCARTADO": 0
-    }
-
-    for produto in produtos:
-
-        status = calcular_status_produto(
-            produto.id,
-            divergencias_pendentes
-        )
-
-        totais[status] += 1
-
-        if (
-            produto.id
-            in produtos_com_divergencia
-        ):
-
-            totais[
-                "DIVERGENCIA"
-            ] += 1
-
-        if (
-            produto.id
-            in produtos_corrigidos
-        ):
-
-            totais[
-                "CORRIGIDO"
-            ] += 1
-
-        if (
-            produto.id
-            in produtos_descartados
-        ):
-
-            totais[
-                "DESCARTADO"
-            ] += 1
 
     return render_template(
         "divergencia/listar.html",
         itens=itens,
         filtro=filtro,
         pesquisa=pesquisa,
-        totais=totais
+        totais=totais,
+        historico=filtro in (
+            "HISTORICO",
+            "CORRIGIDO",
+            "DESCARTADO"
+        )
     )
+
+
+@divergencia_bp.route("/buscar-produtos")
+def buscar_produtos():
+
+    termo = request.args.get("q", "").strip()
+
+    if len(termo) < 2:
+        return jsonify([])
+
+    padrao = f"%{termo}%"
+
+    produtos = (
+        Produto.query
+        .filter(
+            Produto.enderecos.any(),
+            or_(
+                cast(Produto.codigo, String).ilike(padrao),
+                Produto.descricao.ilike(padrao),
+                Produto.codigo_barras.ilike(padrao)
+            )
+        )
+        .order_by(Produto.descricao, Produto.codigo)
+        .limit(20)
+        .all()
+    )
+
+    produtos_ids = [produto.id for produto in produtos]
+
+    pendentes = (
+        DivergenciaCodigoBarras.query
+        .filter(
+            DivergenciaCodigoBarras.produto_id.in_(produtos_ids),
+            DivergenciaCodigoBarras.status == "PENDENTE"
+        )
+        .order_by(
+            DivergenciaCodigoBarras.data_registro.desc(),
+            DivergenciaCodigoBarras.id.desc()
+        )
+        .all()
+    )
+
+    pendente_por_produto = {}
+
+    for divergencia in pendentes:
+        pendente_por_produto.setdefault(
+            divergencia.produto_id,
+            divergencia.id
+        )
+
+    return jsonify([
+        {
+            "id": produto.id,
+            "codigo": produto.codigo,
+            "descricao": produto.descricao,
+            "codigo_barras": produto.codigo_barras or "",
+            "divergencia_pendente_id": pendente_por_produto.get(produto.id)
+        }
+        for produto in produtos
+    ])
 
 
 @divergencia_bp.route(

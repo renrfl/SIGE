@@ -4,38 +4,150 @@
 
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
 
-    <h2>Endereçamento de Produtos</h2>
+    <h2 class="mb-0">
+        Endereçamento de Produtos
+    </h2>
 
-    <a
-        href="{{ url_for('endereco.novo') }}"
-        class="btn btn-success">
+    <div class="d-flex gap-2 flex-wrap">
 
-        Novo Endereçamento
+        <a
+            href="{{ url_for('endereco.novo') }}"
+            class="btn btn-success d-flex align-items-center justify-content-center">
 
-    </a>
+            Novo Endereçamento
+
+        </a>
+
+        <a
+            href="{{ url_for('endereco.novo_estrutura') }}"
+            class="btn btn-outline-success d-flex align-items-center justify-content-center">
+
+            Teste por Estrutura
+
+        </a>
+
+    </div>
 
 </div>
 
+<style>
+
+    .endereco-busca .form-control,
+    .endereco-busca .btn,
+    .endereco-paginacao .btn {
+        min-height: 44px;
+    }
+
+
+    .endereco-mobile-produto {
+        min-width: 150px;
+    }
+
+    .endereco-mobile-local {
+        min-width: 125px;
+    }
+
+    .endereco-detalhes {
+        background-color: var(--bs-tertiary-bg);
+    }
+
+    .endereco-detalhes-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.65rem;
+    }
+
+    .endereco-detalhe-label {
+        font-size: 0.75rem;
+        color: var(--bs-secondary-color);
+        margin-bottom: 0.1rem;
+    }
+
+    .endereco-detalhe-valor {
+        overflow-wrap: anywhere;
+    }
+
+    .btn-detalhes-mobile {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        font-size: 1.35rem;
+        line-height: 1;
+    }
+
+    @media (min-width: 768px) {
+
+        .endereco-detalhes-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+    }
+
+</style>
+
+<form action="{{ url_for('endereco.listar') }}" method="get" class="mb-3">
+    <label for="pesquisa-endereco" class="form-label">Buscar produto endereçado</label>
+    <div class="d-flex flex-wrap gap-2 endereco-busca">
+        <input
+            type="search"
+            id="pesquisa-endereco"
+            name="q"
+            value="{{ pesquisa }}"
+            placeholder="Código, descrição ou código de barras"
+            class="form-control"
+            style="flex: 1 1 220px; min-width: 0;">
+        <button type="submit" class="btn btn-success">Buscar</button>
+        {% if pesquisa %}
+            <a href="{{ url_for('endereco.listar') }}" class="btn btn-outline-secondary d-flex align-items-center">Limpar</a>
+        {% endif %}
+    </div>
+</form>
+
+<p class="small text-muted mb-3" role="status">
+    {% if paginacao.total %}
+        {{ paginacao.first }}–{{ paginacao.last }} de {{ paginacao.total }} endereçamentos
+        {% if pesquisa %} encontrados{% endif %}
+    {% elif pesquisa %}
+        Nenhum resultado para esta busca.
+    {% else %}
+        Nenhum produto endereçado.
+    {% endif %}
+</p>
+
 <div class="table-responsive">
 
-    <table class="table table-bordered table-hover align-middle">
+    <table class="table table-bordered table-hover align-middle mb-0">
 
         <thead class="table-dark">
 
             <tr>
 
-                <th>ID</th>
-                <th>Código</th>
-                <th>Produto</th>
-                <th>Código de barras</th>
-                <th>Rua</th>
-                <th>Prédio</th>
-                <th>Módulo</th>
-                <th>Nível</th>
-                <th>Posição</th>
-                <th>Ações</th>
+                <!-- Desktop -->
+                <th class="d-none d-md-table-cell">ID</th>
+                <th class="d-none d-md-table-cell">Código</th>
+                <th class="d-none d-md-table-cell">Produto</th>
+                <th class="d-none d-md-table-cell">Código de barras</th>
+                <th class="d-none d-md-table-cell">Rua</th>
+                <th class="d-none d-md-table-cell">Prédio</th>
+                <th class="d-none d-md-table-cell">Módulo</th>
+                <th class="d-none d-md-table-cell">Nível</th>
+                <th class="d-none d-md-table-cell">Posição</th>
+                <th class="d-none d-md-table-cell text-end">Ações</th>
+
+                <!-- Mobile -->
+                <th class="d-table-cell d-md-none">
+                    Produto
+                </th>
+
+                <th class="d-table-cell d-md-none">
+                    Localização
+                </th>
+
+                <th class="d-table-cell d-md-none text-center">
+                    +
+                </th>
 
             </tr>
 
@@ -47,35 +159,57 @@
 
                 <tr>
 
-                    <td>{{ endereco.id }}</td>
+                    <!-- Desktop -->
 
-                    <td>{{ endereco.produto.codigo }}</td>
+                    <td class="d-none d-md-table-cell">
+                        {{ endereco.id }}
+                    </td>
 
-                    <td>{{ endereco.produto.descricao }}</td>
+                    <td class="d-none d-md-table-cell">
+                        {{ endereco.produto.codigo }}
+                    </td>
 
-                    <td>{{ endereco.produto.codigo_barras }}</td>
+                    <td class="d-none d-md-table-cell">
+                        {{ endereco.produto.descricao }}
+                    </td>
 
-                    <td>
+                    <td class="d-none d-md-table-cell">
+
+                        {% if endereco.produto.codigo_barras %}
+
+                            {{ endereco.produto.codigo_barras }}
+
+                        {% else %}
+
+                            <span class="text-muted">
+                                -
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td class="d-none d-md-table-cell">
                         {{ endereco.posicao.nivel.modulo.predio.rua.nome }}
                     </td>
 
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         {{ endereco.posicao.nivel.modulo.predio.nome }}
                     </td>
 
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         {{ endereco.posicao.nivel.modulo.nome }}
                     </td>
 
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         {{ endereco.posicao.nivel.nome }}
                     </td>
 
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         {{ endereco.posicao.nome }}
                     </td>
 
-                    <td>
+                    <td class="d-none d-md-table-cell text-end text-nowrap">
 
                         <a
                             href="{{ url_for('endereco.editar', id=endereco.id) }}"
@@ -96,6 +230,200 @@
 
                     </td>
 
+                    <!-- Mobile -->
+
+                    <td class="d-table-cell d-md-none endereco-mobile-produto">
+
+                        <div class="fw-semibold">
+                            {{ endereco.produto.codigo }}
+                        </div>
+
+                        <div class="small">
+                            {{ endereco.produto.descricao }}
+                        </div>
+
+                    </td>
+
+                    <td class="d-table-cell d-md-none endereco-mobile-local">
+
+                        <div class="small">
+
+                            {{ endereco.posicao.nivel.modulo.predio.rua.nome }}
+                            →
+                            {{ endereco.posicao.nivel.modulo.predio.nome }}
+                            →
+                            {{ endereco.posicao.nivel.modulo.nome }}
+                            →
+                            {{ endereco.posicao.nome }}
+
+                        </div>
+
+                    </td>
+
+                    <td class="d-table-cell d-md-none text-center">
+
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary btn-detalhes-mobile"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#detalhes-endereco-{{ endereco.id }}"
+                            aria-expanded="false"
+                            aria-controls="detalhes-endereco-{{ endereco.id }}"
+                            aria-label="Mostrar detalhes">
+
+                            +
+
+                        </button>
+
+                    </td>
+
+                </tr>
+
+                <!-- Detalhes apenas para mobile -->
+
+                <tr class="d-md-none">
+
+                    <td
+                        colspan="3"
+                        class="p-0 border-top-0">
+
+                        <div
+                            class="collapse endereco-detalhes"
+                            id="detalhes-endereco-{{ endereco.id }}">
+
+                            <div class="p-3">
+
+                                <div class="endereco-detalhes-grid mb-3">
+
+                                    <div>
+
+                                        <div class="endereco-detalhe-label">
+                                            ID do endereçamento
+                                        </div>
+
+                                        <div class="endereco-detalhe-valor fw-semibold">
+                                            {{ endereco.id }}
+                                        </div>
+
+                                    </div>
+
+                                    <div>
+
+                                        <div class="endereco-detalhe-label">
+                                            Código interno
+                                        </div>
+
+                                        <div class="endereco-detalhe-valor fw-semibold">
+                                            {{ endereco.produto.codigo }}
+                                        </div>
+
+                                    </div>
+
+                                    <div>
+
+                                        <div class="endereco-detalhe-label">
+                                            Código de barras
+                                        </div>
+
+                                        <div class="endereco-detalhe-valor">
+
+                                            {% if endereco.produto.codigo_barras %}
+
+                                                {{ endereco.produto.codigo_barras }}
+
+                                            {% else %}
+
+                                                <span class="text-muted">
+                                                    Não informado
+                                                </span>
+
+                                            {% endif %}
+
+                                        </div>
+
+                                    </div>
+
+                                    <div>
+
+                                        <div class="endereco-detalhe-label">
+                                            Produto
+                                        </div>
+
+                                        <div class="endereco-detalhe-valor">
+                                            {{ endereco.produto.descricao }}
+                                        </div>
+
+                                    </div>
+
+                                    <div>
+
+                                        <div class="endereco-detalhe-label">
+                                            Endereço
+                                        </div>
+
+                                        <div class="endereco-detalhe-valor">
+
+                                            {{ endereco.posicao.nivel.modulo.predio.rua.nome }}
+                                            →
+                                            {{ endereco.posicao.nivel.modulo.predio.nome }}
+                                            →
+                                            {{ endereco.posicao.nivel.modulo.nome }}
+                                            →
+                                            {{ endereco.posicao.nome }}
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="d-grid gap-2">
+
+                                    <a
+                                        href="{{ url_for('divergencia.listar') }}"
+                                        class="btn btn-outline-secondary">
+
+                                        Divergências
+
+                                    </a>
+
+                                    <div class="row g-2">
+
+                                        <div class="col-6">
+
+                                            <a
+                                                href="{{ url_for('endereco.editar', id=endereco.id) }}"
+                                                class="btn btn-warning w-100">
+
+                                                Editar
+
+                                            </a>
+
+                                        </div>
+
+                                        <div class="col-6">
+
+                                            <a
+                                                href="{{ url_for('endereco.excluir', id=endereco.id) }}"
+                                                class="btn btn-danger w-100"
+                                                onclick="return confirm('Deseja remover este endereçamento?')">
+
+                                                Excluir
+
+                                            </a>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </td>
+
                 </tr>
 
             {% else %}
@@ -103,10 +431,14 @@
                 <tr>
 
                     <td
-                        colspan="10"
+                        colspan="13"
                         class="text-center">
 
-                        Nenhum produto endereçado.
+                        {% if pesquisa %}
+                            Nenhum produto endereçado encontrado para esta busca.
+                        {% else %}
+                            Nenhum produto endereçado.
+                        {% endif %}
 
                     </td>
 
@@ -119,5 +451,23 @@
     </table>
 
 </div>
+
+{% if paginacao.pages > 1 %}
+    <nav aria-label="Páginas dos endereçamentos" class="endereco-paginacao d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+        {% if paginacao.has_prev %}
+            <a href="{{ url_for('endereco.listar', page=paginacao.prev_num, q=pesquisa) }}" class="btn btn-outline-success d-flex align-items-center" rel="prev">Anterior</a>
+        {% else %}
+            <span class="btn btn-outline-secondary disabled d-flex align-items-center" aria-disabled="true">Anterior</span>
+        {% endif %}
+
+        <span class="small text-muted">Página {{ paginacao.page }} de {{ paginacao.pages }}</span>
+
+        {% if paginacao.has_next %}
+            <a href="{{ url_for('endereco.listar', page=paginacao.next_num, q=pesquisa) }}" class="btn btn-outline-success d-flex align-items-center" rel="next">Próxima</a>
+        {% else %}
+            <span class="btn btn-outline-secondary disabled d-flex align-items-center" aria-disabled="true">Próxima</span>
+        {% endif %}
+    </nav>
+{% endif %}
 
 {% endblock %}

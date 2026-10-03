@@ -15,24 +15,26 @@ Consulta de Endereço
             <div class="card">
 
                 <div class="card-header bg-success text-white">
-
                     Consulta de Endereço
-
                 </div>
 
-                <div class="card-body py-3">
+                <div class="card-body">
 
                     <form
                         method="POST"
                         id="form-consulta">
 
-                        <div class="mb-3">
+                        <div class="mb-3 position-relative">
 
                             <label
                                 for="pesquisa"
                                 class="form-label">
 
-                                Código do produto ou código de barras
+                                {% if session.get("usuario_id") %}
+                                    Código, código de barras ou descrição
+                                {% else %}
+                                    Código do produto ou código de barras
+                                {% endif %}
 
                             </label>
 
@@ -41,10 +43,31 @@ Consulta de Endereço
                                 class="form-control"
                                 id="pesquisa"
                                 name="pesquisa"
+                                autocomplete="off"
+                                value="{{ pesquisa or '' }}"
+                                {% if session.get("usuario_id") %}
+                                    placeholder="Código, código de barras ou descrição"
+                                {% else %}
+                                    placeholder="Código interno ou código de barras"
+                                {% endif %}
                                 {% if not produto %}
                                     autofocus
                                 {% endif %}
                                 required>
+
+                            {% if session.get("usuario_id") %}
+
+                                <div
+                                    id="resultados-pesquisa-admin"
+                                    class="list-group position-absolute w-100 shadow-sm d-none"
+                                    style="z-index: 1050; max-height: 280px; overflow-y: auto;">
+                                </div>
+ <!--
+                                <div class="form-text">
+                                    Na área administrativa também é possível pesquisar pela descrição.
+                                </div> -->
+
+                            {% endif %}
 
                         </div>
 
@@ -62,18 +85,63 @@ Consulta de Endereço
 
             </div>
 
+            {% if session.get("usuario_id") and resultados_pesquisa %}
+
+                <div class="card mt-3">
+
+                    <div class="card-body">
+
+                        <div class="fw-semibold mb-2">
+                            Produtos encontrados
+                        </div>
+
+                        <div class="list-group">
+
+                            {% for item in resultados_pesquisa %}
+
+                                <a
+                                    href="{{ url_for(
+                                        'consulta.consultar_produto',
+                                        codigo=item.codigo
+                                    ) }}"
+                                    class="list-group-item list-group-item-action">
+
+                                    <div class="fw-semibold">
+                                        {{ item.codigo }}
+                                        -
+                                        {{ item.descricao }}
+                                    </div>
+
+                                    {% if item.codigo_barras %}
+
+                                        <div class="small text-muted">
+                                            {{ item.codigo_barras }}
+                                        </div>
+
+                                    {% endif %}
+
+                                </a>
+
+                            {% endfor %}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% endif %}
+
             {% if endereco %}
 
                 <div class="card mt-3">
 
-                    <div class="card-body py-3">
+                    <div class="card-body">
 
                         <h5 class="mb-3">
-
                             {{ endereco.produto.codigo }}
                             -
                             {{ endereco.produto.descricao }}
-
                         </h5>
 
                         <table class="table table-bordered table-sm mb-2">
@@ -167,16 +235,16 @@ Consulta de Endereço
 
                         {% if session.get("usuario_id") %}
 
-                            <div class="row g-2 align-items-stretch">
+                            <div class="row g-2">
 
-                                <div class="col-6 d-flex">
+                                <div class="col-6 d-grid">
 
                                     <a
                                         href="{{ url_for(
-                                            'endereco.editar',
-                                            id=endereco.id
+                                            'endereco.novo_estrutura',
+                                            codigo=produto.codigo
                                         ) }}"
-                                        class="btn btn-warning w-100 d-flex align-items-center justify-content-center">
+                                        class="btn btn-warning d-flex align-items-center justify-content-center">
 
                                         Alterar endereço
 
@@ -184,11 +252,11 @@ Consulta de Endereço
 
                                 </div>
 
-                                <div class="col-6 d-flex">
+                                <div class="col-6 d-grid">
 
                                     <button
                                         type="button"
-                                        class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center"
+                                        class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
                                         data-bs-toggle="collapse"
                                         data-bs-target="#funcoes-produto"
                                         aria-expanded="false"
@@ -206,7 +274,7 @@ Consulta de Endereço
                                 class="collapse mt-2"
                                 id="funcoes-produto">
 
-                                <div class="card card-body py-2">
+                                <div class="card card-body p-2">
 
                                     <a
                                         href="{{ url_for(
@@ -233,14 +301,12 @@ Consulta de Endereço
 
                 <div class="card mt-3">
 
-                    <div class="card-body py-3">
+                    <div class="card-body">
 
                         <h5 class="mb-3">
-
                             {{ produto.codigo }}
                             -
                             {{ produto.descricao }}
-
                         </h5>
 
                         <table class="table table-bordered table-sm mb-3">
@@ -287,16 +353,16 @@ Consulta de Endereço
 
                         {% if session.get("usuario_id") %}
 
-                            <div class="row g-2 align-items-stretch">
+                            <div class="row g-2">
 
-                                <div class="col-6 d-flex">
+                                <div class="col-6 d-grid">
 
                                     <a
                                         href="{{ url_for(
-                                            'endereco.novo',
+                                            'endereco.novo_estrutura',
                                             codigo=produto.codigo
                                         ) }}"
-                                        class="btn btn-warning w-100 d-flex align-items-center justify-content-center">
+                                        class="btn btn-warning d-flex align-items-center justify-content-center">
 
                                         Cadastrar endereço
 
@@ -304,11 +370,11 @@ Consulta de Endereço
 
                                 </div>
 
-                                <div class="col-6 d-flex">
+                                <div class="col-6 d-grid">
 
                                     <button
                                         type="button"
-                                        class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center"
+                                        class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
                                         data-bs-toggle="collapse"
                                         data-bs-target="#funcoes-produto-sem-endereco"
                                         aria-expanded="false"
@@ -326,13 +392,10 @@ Consulta de Endereço
                                 class="collapse mt-2"
                                 id="funcoes-produto-sem-endereco">
 
-                                <div class="card card-body py-2">
+                                <div class="card card-body p-2">
 
                                     <div class="small text-muted">
-
-                                        Nenhuma função adicional
-                                        disponível no momento.
-
+                                        Nenhuma função adicional disponível no momento.
                                     </div>
 
                                 </div>
@@ -355,16 +418,194 @@ Consulta de Endereço
 
 <script>
 
-    document
-        .getElementById("form-consulta")
-        .addEventListener("submit", function () {
+document
+    .getElementById("form-consulta")
+    .addEventListener(
+        "submit",
+        function () {
 
-            const campoPesquisa =
-                document.getElementById("pesquisa");
+            document
+                .getElementById("pesquisa")
+                .blur();
+        }
+    );
 
-            campoPesquisa.blur();
+{% if session.get("usuario_id") %}
 
-        });
+const campoPesquisaAdmin =
+    document.getElementById("pesquisa");
+
+const resultadosAdmin =
+    document.getElementById(
+        "resultados-pesquisa-admin"
+    );
+
+let timerPesquisaAdmin = null;
+
+function escaparHtml(texto) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        texto ?? "";
+
+    return div.innerHTML;
+}
+
+async function buscarProdutosAdmin(termo) {
+
+    if (termo.length < 2) {
+
+        resultadosAdmin.innerHTML = "";
+
+        resultadosAdmin.classList.add(
+            "d-none"
+        );
+
+        return;
+    }
+
+    const resposta = await fetch(
+        "{{ url_for('consulta.buscar_produtos') }}"
+        + "?q="
+        + encodeURIComponent(termo)
+    );
+
+    const produtos =
+        await resposta.json();
+
+    resultadosAdmin.innerHTML = "";
+
+    if (!produtos.length) {
+
+        resultadosAdmin.innerHTML =
+            '<div class="list-group-item text-muted">'
+            + 'Nenhum produto encontrado.'
+            + '</div>';
+
+        resultadosAdmin.classList.remove(
+            "d-none"
+        );
+
+        return;
+    }
+
+    produtos.forEach(
+        function (produto) {
+
+            const link =
+                document.createElement("a");
+
+            const urlBase =
+                "{{ url_for(
+                    'consulta.consultar_produto',
+                    codigo=0
+                ) }}";
+
+            link.href =
+                urlBase.replace(
+                    /0$/,
+                    encodeURIComponent(
+                        produto.codigo
+                    )
+                );
+
+            link.className =
+                "list-group-item "
+                + "list-group-item-action";
+
+            let complemento = "";
+
+            if (produto.codigo_barras) {
+
+                complemento =
+                    '<div class="small text-muted">'
+                    + escaparHtml(
+                        produto.codigo_barras
+                    )
+                    + '</div>';
+            }
+
+            link.innerHTML =
+                '<div class="fw-semibold">'
+                + escaparHtml(
+                    produto.codigo
+                )
+                + ' - '
+                + escaparHtml(
+                    produto.descricao
+                )
+                + '</div>'
+                + complemento;
+
+            resultadosAdmin.appendChild(
+                link
+            );
+        }
+    );
+
+    resultadosAdmin.classList.remove(
+        "d-none"
+    );
+}
+
+campoPesquisaAdmin.addEventListener(
+    "input",
+    function () {
+
+        clearTimeout(
+            timerPesquisaAdmin
+        );
+
+        const termo =
+            campoPesquisaAdmin.value.trim();
+
+        if (termo.length < 2) {
+
+            resultadosAdmin.innerHTML = "";
+
+            resultadosAdmin.classList.add(
+                "d-none"
+            );
+
+            return;
+        }
+
+        timerPesquisaAdmin = setTimeout(
+            function () {
+
+                buscarProdutosAdmin(
+                    termo
+                );
+
+            },
+            300
+        );
+    }
+);
+
+document.addEventListener(
+    "click",
+    function (event) {
+
+        if (
+            !campoPesquisaAdmin.contains(
+                event.target
+            )
+            && !resultadosAdmin.contains(
+                event.target
+            )
+        ) {
+
+            resultadosAdmin.classList.add(
+                "d-none"
+            );
+        }
+    }
+);
+
+{% endif %}
 
 </script>
 

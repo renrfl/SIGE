@@ -24,6 +24,21 @@ nivel_bp = Blueprint(
 )
 
 
+
+def buscar_outro_nivel_modulo(modulo_id, nivel_id=None):
+
+    consulta = Nivel.query.filter_by(
+        modulo_id=modulo_id
+    )
+
+    if nivel_id is not None:
+        consulta = consulta.filter(
+            Nivel.id != nivel_id
+        )
+
+    return consulta.first()
+
+
 def preparar_modulos():
 
     modulos = Modulo.query.filter_by(
@@ -120,15 +135,18 @@ def novo():
                 )
             )
 
-        nivel_existente = Nivel.query.filter_by(
-            nome=nome,
-            modulo_id=modulo_id
-        ).first()
+        nivel_existente = buscar_outro_nivel_modulo(
+            modulo_id
+        )
 
         if nivel_existente:
 
             flash(
-                "Já existe um nível com esse nome neste módulo.",
+                (
+                    f"Este módulo já possui o nível {nivel_existente.nome}. "
+                    "Edite ou reative o nível existente. "
+                    "Cada módulo pode possuir apenas um nível."
+                ),
                 "warning"
             )
 
@@ -279,16 +297,19 @@ def editar(id):
                 )
             )
 
-        nivel_existente = Nivel.query.filter(
-            Nivel.nome == nome,
-            Nivel.modulo_id == modulo_id,
-            Nivel.id != nivel.id
-        ).first()
+        nivel_existente = buscar_outro_nivel_modulo(
+            modulo_id,
+            nivel_id=nivel.id
+        )
 
         if nivel_existente:
 
             flash(
-                "Já existe um nível com esse nome neste módulo.",
+                (
+                    f"O módulo de destino já possui o nível "
+                    f"{nivel_existente.nome}. "
+                    "Cada módulo pode possuir apenas um nível."
+                ),
                 "warning"
             )
 
@@ -333,6 +354,26 @@ def alternar_status(id):
     )
 
     novo_status = not nivel.ativo
+
+    if novo_status:
+
+        nivel_existente = buscar_outro_nivel_modulo(
+            nivel.modulo_id,
+            nivel_id=nivel.id
+        )
+
+        if nivel_existente:
+
+            flash(
+                (
+                    f"Este módulo também possui o nível "
+                    f"{nivel_existente.nome}. "
+                    "Cada módulo pode possuir apenas um nível."
+                ),
+                "warning"
+            )
+
+            return redirect(url_for("nivel.listar"))
 
     nivel.ativo = novo_status
 
